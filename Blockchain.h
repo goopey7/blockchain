@@ -6,15 +6,14 @@
 #define BLOCKCHAIN_BLOCKCHAIN_H
 
 
-#include <vector>
+#include "LLNode.h"
 #include "Block.h"
 
 class Blockchain
 {
 private:
 	int difficulty;
-	// TODO don't use vector, create own linked list class using recursion
-	std::vector<Block*> chain;
+	LLNode<Block> chain;
 public:
 	bool validateChain();
 };

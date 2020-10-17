@@ -1,0 +1,7 @@
+Friday (10/16/20)
+
+I successfully created my own linked list header file. This is going to be the data structure that my blockchain class
+will take advantage of.
+
+Also, I think I'm going to apply my blockchain to fundraising for video games. My blockchain tech can be used to verify
+ownership of digital items purchased through the platform.
