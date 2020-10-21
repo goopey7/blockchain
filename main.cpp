@@ -22,14 +22,20 @@ int main()
 #include <iostream>
 int main()
 {
+	//TODO
 	Blockchain chain;
-	chain.addBlockToChain("Hello there");
 	chain.addBlockToChain("How are we?");
+	chain.addBlockToChain("Hello there");
+	chain.addBlockToChain("hmmmmmmm");
 	chain.validateChain();
-	std::cout << chain.at(0)->getData() << std::endl;
-	std::cout << chain.at(0)->getNonce() << std::endl;
-	std::cout << chain.at(0)->generateHash() << std::endl;
-	std::cout << chain.at(1)->getData() << std::endl;
-	std::cout << chain.at(1)->getNonce() << std::endl;
-	std::cout << chain.at(1)->generateHash() << std::endl;
+	for(int i=0;i<chain.size();i++)
+	{
+		std::cout << "*******************************************************\n";
+		std::cout << chain.at(i)->getIndex() << std::endl;
+		std::cout << chain.at(i)->getData() << std::endl;
+		std::cout << chain.at(i)->getNonce() << std::endl;
+		std::cout << chain.at(i)->generateHash() << std::endl;
+		std::cout << "*******************************************************\n";
+	}
+
 }

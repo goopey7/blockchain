@@ -2,11 +2,11 @@
 // Created by sam on 08/10/2020.
 //
 
-#include <iostream>
 #include "Blockchain.h"
 
 bool Blockchain::validateChain()
 {
+	//TODO add a check for chronological order
 	for(int i=1;i<chain.size();i++)
 	{
 		if(chain.at(i-1)->generateHash()!=chain.at(i)->getPrevHash())
@@ -27,24 +27,29 @@ void Blockchain::addBlockToChain(std::string data)
 	if(chain.size()==1&&chain.getData()==nullptr)
 	{
 		blockToAdd->setPrevHash("0"); // this is the genesis block
+		blockToAdd->setIndex(0);
 	}
 	else
 	{
 		blockToAdd->setPrevHash(chain.at(chain.size()-1)->generateHash());
+		blockToAdd->setIndex(chain.size());
 	}
 	mineBlock(blockToAdd);
 	chain.add(blockToAdd);
 }
 
-void Blockchain::mineBlock(Block* block)
+std::string Blockchain::mineBlock(Block* block)
 {
-	std::string hash="A";
-	int i=0;
-	while(hash.substr(0,currentDifficulty)!="0")
+	std::string hash="";
+	uint64_t i=0;
+	std::string zeros = "";
+	for(int i=0;i<currentDifficulty;i++)zeros+="0";
+	while(hash.substr(0,currentDifficulty)!=zeros)
 	{
 		block->setNonce(i);
 		hash = block->generateHash();
 		i++;
 	}
+	return hash;
 }
 

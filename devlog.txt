@@ -18,3 +18,5 @@ chain, we then request to look at the server's copy of the chain. If the client'
 at least a certain amount of peers, then the server rewrites its copy of the blockchain and distributes the changes
 to the clients. Also every time we boot up a client we will have to check if the server has more blocks than the client.
 If so, then the client must retrieve the server's blockchain and rewrite its own.
+
+Looks like there are no issues at all with the leading zeros!

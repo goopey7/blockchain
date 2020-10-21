@@ -14,10 +14,11 @@ Block::Block(std::string _data)
 	std::cout << timeStamp <<std::endl;
 }
 
+//TODO make multi-threaded!
 std::string Block::generateHash()
 {
 	return picosha2::hash256_hex_string(std::to_string(index)+prevHash+data+
-	std::to_string(difficulty)+timeStamp+std::to_string(nonce));
+										std::to_string(difficulty)+timeStamp+std::to_string(nonce));
 }
 
 // referred to stack overflow for this one https://stackoverflow.com/questions/16357999/current-date-and-time-as-string

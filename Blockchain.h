@@ -14,12 +14,13 @@ class Blockchain
 private:
 	short currentDifficulty=1;
 	LLNode<Block> chain;
+	std::string mineBlock(Block* block);
 public:
 	~Blockchain(){chain.clear();} //Destructor. Frees memory
 	bool validateChain();
 	void addBlockToChain(std::string data);
-	void mineBlock(Block* block);
 	Block* at(uint64_t index){return chain.at(index);}
+	uint64_t size(){return chain.size();}
 };
 
 

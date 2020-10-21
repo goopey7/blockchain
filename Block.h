@@ -26,6 +26,7 @@ public:
 	std::string getTimeStamp(){return timeStamp;};
 	uint64_t getNonce(){return nonce;}
 	short getDifficulty(){return difficulty;}
+	void setIndex(uint64_t _index){index=_index;}
 	void setPrevHash(std::string _prevHash){prevHash=_prevHash;}
 	void setNonce(uint64_t _nonce){nonce=_nonce;}
 	void setDifficulty(short _difficulty){difficulty=_difficulty;}
