@@ -14,7 +14,17 @@ Block::Block(std::string _data)
 	std::cout << timeStamp <<std::endl;
 }
 
-//TODO make multi-threaded!
+Block::Block(uint64_t _index, std::string _data, std::string _prevHash, std::string _timeStamp, uint64_t _nonce,
+			 short _difficulty)
+{
+	index=_index;
+	data=_data;
+	prevHash=_prevHash;
+	timeStamp=_timeStamp;
+	nonce=_nonce;
+	difficulty=_difficulty;
+}
+
 std::string Block::generateHash()
 {
 	return picosha2::hash256_hex_string(std::to_string(index)+prevHash+data+
@@ -31,4 +41,3 @@ std::string Block::generateTimeStamp()
 	std::string returnStr = oss.str();
 	return returnStr;
 }
-

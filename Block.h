@@ -19,7 +19,12 @@ private:
 	short difficulty;
 	std::string generateTimeStamp();
 public:
+	// this constructor is used when creating a new block
 	Block(std::string _data);
+	// this constructor is used when reading from file
+	Block(uint64_t _index, std::string _data, std::string _prevHash, std::string _timeStamp,
+	   uint64_t _nonce,
+	   short _difficulty);
 	uint64_t getIndex(){return index;}
 	std::string getData(){return data;}
 	std::string getPrevHash(){return prevHash;};

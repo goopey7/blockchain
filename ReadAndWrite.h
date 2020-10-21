@@ -27,7 +27,7 @@ void ReadAndWrite::getInputAsString(std::string& input)
 std::vector<std::string>* ReadAndWrite::readFile(std::string inFileName)
 {
 	// read into our database line by line
-	auto lines = new std::vector<std::string>;
+	auto* lines=new std::vector<std::string>;
 	std::ifstream inFile(inFileName);
 	std::string line;
 	while(std::getline(inFile,line))

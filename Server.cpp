@@ -3,10 +3,10 @@
 //
 
 #include "Server.h"
-#include "ReadAndWrite.h"
 #include <thread>
 #include <iostream>
 #include <arpa/inet.h>
+#include "Blockchain.h"
 
 void Server::onClientConnect()
 {
@@ -58,6 +58,11 @@ void Server::onClientConnect()
 		std::cout << "IP address: " << inet_ntoa(address.sin_addr) << std::endl;
 		valread = read(new_socket, buffer, 1024);
 		std::cout<< buffer << std::endl;
+		std::string bufferStr(buffer);
+		if(bufferStr=="PleaseSendYourCopyOfTheBlockchainThanks")
+		{
+			//send(new_socket,)
+		}
 		send(new_socket, hello.c_str(), hello.length(), 0);
 		std::cout << "Hello message sent\n";
 	}
@@ -69,9 +74,9 @@ void Server::start()
 	// distribute blockchain to those who don't already have one
 	// 
 	std::string input;
-	while(input!="s")
+	/*while(input!="s")
 		ReadAndWrite::getInputAsString(input);
-	tAcceptClients.detach();
+	tAcceptClients.detach();*/
 }
 
 

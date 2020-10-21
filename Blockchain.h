@@ -21,7 +21,9 @@ public:
 	void addBlockToChain(std::string data);
 	Block* at(uint64_t index){return chain.at(index);}
 	uint64_t size(){return chain.size();}
-};
 
+	void read(std::string fileName);
+	void write(std::string fileName);
+};
 
 #endif //BLOCKCHAIN_BLOCKCHAIN_H

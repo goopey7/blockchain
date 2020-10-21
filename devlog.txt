@@ -20,3 +20,6 @@ to the clients. Also every time we boot up a client we will have to check if the
 If so, then the client must retrieve the server's blockchain and rewrite its own.
 
 Looks like there are no issues at all with the leading zeros!
+
+Wednesday (10/21/20)
+Added functions for reading and writing the chain to a file.

@@ -22,13 +22,14 @@ int main()
 #include <iostream>
 int main()
 {
-	//TODO
 	Blockchain chain;
+	chain.read("blockchain.txt");
+/*
 	chain.addBlockToChain("How are we?");
 	chain.addBlockToChain("Hello there");
 	chain.addBlockToChain("hmmmmmmm");
 	chain.validateChain();
-	for(int i=0;i<chain.size();i++)
+	*/for(int i=0;i<chain.size();i++)
 	{
 		std::cout << "*******************************************************\n";
 		std::cout << chain.at(i)->getIndex() << std::endl;
@@ -37,5 +38,5 @@ int main()
 		std::cout << chain.at(i)->generateHash() << std::endl;
 		std::cout << "*******************************************************\n";
 	}
-
+	chain.write("blockchain.txt");
 }
