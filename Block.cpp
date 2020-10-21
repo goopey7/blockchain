@@ -2,34 +2,32 @@
 // Created by sam on 08/10/2020.
 //
 
+#include <iostream>
+#include <ctime>
+#include <iomanip>
 #include "Block.h"
 
-long Block::getIndex()
+Block::Block(std::string _data)
 {
-	return index;
+	data=_data;
+	timeStamp=generateTimeStamp();
+	std::cout << timeStamp <<std::endl;
 }
 
-std::string Block::getData()
+std::string Block::generateHash()
 {
-	return data;
+	return picosha2::hash256_hex_string(std::to_string(index)+prevHash+data+
+	std::to_string(difficulty)+timeStamp+std::to_string(nonce));
 }
 
-std::string Block::getPrevHash()
+// referred to stack overflow for this one https://stackoverflow.com/questions/16357999/current-date-and-time-as-string
+std::string Block::generateTimeStamp()
 {
-	return prevHash;
+	long t = std::time(nullptr);
+	tm localTime = *std::localtime(&t);
+	std::ostringstream oss;
+	oss << std::put_time(&localTime, "%d-%m-%Y %H:%M:%S");
+	std::string returnStr = oss.str();
+	return returnStr;
 }
 
-std::string Block::getTimeStamp()
-{
-	return timeStamp;
-}
-
-long Block::getNonce()
-{
-	return nonce;
-}
-
-void Block::setNonce(long nonceToSet)
-{
-	nonce=nonceToSet;
-}

@@ -5,3 +5,16 @@ will take advantage of.
 
 Also, I think I'm going to apply my blockchain to fundraising for video games. My blockchain tech can be used to verify
 ownership of digital items purchased through the platform.
+
+Tuesday (10/20/20)
+Implemented more functions for the blockchain class. And also looked into making my project decentralized with sockets.
+So the idea is that I'd host a server whose only purpose is to allow clients to communicate with each other. The server
+does not have authority over the canonical state of the blockchain. So I am reviewing sockets in C++ since the last time
+I played with them was about a year ago when I made a reverse shell program in C++ and once it worked I forgot about how
+to implement sockets. Added functions for adding blocks to the blockchain, mining blocks, validating the chain.
+
+I guess the way server-client interactions will work is that everytime we boot up a client or a client modifies the
+chain, we then request to look at the server's copy of the chain. If the client's copy of the chain is validated by
+at least a certain amount of peers, then the server rewrites its copy of the blockchain and distributes the changes
+to the clients. Also every time we boot up a client we will have to check if the server has more blocks than the client.
+If so, then the client must retrieve the server's blockchain and rewrite its own.

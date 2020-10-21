@@ -7,22 +7,29 @@
 
 
 #include <string>
-
+#include "sha256.h"
 class Block
 {
 private:
-	long index;
+	uint64_t index;
 	std::string data;
 	std::string prevHash;
 	std::string timeStamp;
-	long nonce;
+	uint64_t nonce;
+	short difficulty;
+	std::string generateTimeStamp();
 public:
-	long getIndex();
-	std::string getData();
-	std::string getPrevHash();
-	std::string getTimeStamp();
-	long getNonce();
-	void setNonce(long nonceToSet);
+	Block(std::string _data);
+	uint64_t getIndex(){return index;}
+	std::string getData(){return data;}
+	std::string getPrevHash(){return prevHash;};
+	std::string getTimeStamp(){return timeStamp;};
+	uint64_t getNonce(){return nonce;}
+	short getDifficulty(){return difficulty;}
+	void setPrevHash(std::string _prevHash){prevHash=_prevHash;}
+	void setNonce(uint64_t _nonce){nonce=_nonce;}
+	void setDifficulty(short _difficulty){difficulty=_difficulty;}
+	std::string generateHash();
 };
 
 

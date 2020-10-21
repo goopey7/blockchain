@@ -1,18 +1,35 @@
-#include <iostream>
-#include "LLNode.h"
+/*
+// Server side C/C++ program to demonstrate Socket programming
+
+#include "Server.h"
+#include "Client.h"
 
 int main()
 {
-	LLNode<char> list;
-	char a='a';
-	char b='b';
-	char c='c';
-	list.add(&a);
-	list.add(&b);
-	list.add(&c);
-	std::cout<<list.size()<<"\n";
-	list.remove(0);
-	for(int i=0;i<list.size();i++)
-		std::cout<<*list.get(i);
-	list.clear();
+	Server* s=new Server;
+	s->start();
+	return 0;
+}
+/*#include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include "LLNode.h"
+#include "Block.h"
+
+#define PORT 8080
+*/
+#include "Blockchain.h"
+#include <iostream>
+int main()
+{
+	Blockchain chain;
+	chain.addBlockToChain("Hello there");
+	chain.addBlockToChain("How are we?");
+	chain.validateChain();
+	std::cout << chain.at(0)->getData() << std::endl;
+	std::cout << chain.at(0)->getNonce() << std::endl;
+	std::cout << chain.at(0)->generateHash() << std::endl;
+	std::cout << chain.at(1)->getData() << std::endl;
+	std::cout << chain.at(1)->getNonce() << std::endl;
+	std::cout << chain.at(1)->generateHash() << std::endl;
 }

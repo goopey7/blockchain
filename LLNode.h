@@ -35,15 +35,15 @@ class LLNode
 {
 public:
 	LLNode();
-	LLNode(T* _data);
+	explicit LLNode(T* _data);
 	LLNode<T>* getNextNode();
 	T* getData();
 
 	// get element at index
-	T* get(uint64_t index);
+	T* at(uint64_t index);
 
-	// we don't actually need it since in c++ we can use get to get the reference and then assign something to it.
-	T* set(uint64_t index, T* _data); // set specified element to specified datatype
+	// we don't actually need it since in c++ we can use at to get the reference and then assign something to it.
+	T* set(uint64_t index, T* _data); // set specified element to specified data
 
 	uint64_t size();
 	void add(T* _data); // add to the end of the list
@@ -54,7 +54,6 @@ private:
 	LLNode<T>* next;
 	T* data;
 };
-
 
 template<class T>
 LLNode<T>::LLNode()
@@ -83,10 +82,10 @@ T* LLNode<T>::getData()
 }
 
 template<class T>
-T* LLNode<T>::get(uint64_t index)
+T* LLNode<T>::at(uint64_t index)
 {
 	if(index==0)return data;
-	return next->get(index-1);
+	return next->at(index - 1);
 }
 
 template<class T>
