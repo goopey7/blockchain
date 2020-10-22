@@ -18,9 +18,9 @@
 class Server
 {
 private:
-
+	int clientsConnected=0;
 public:
-	void onClientConnect();
+	void listenAndObeyClients();
 	void start();
 };
 

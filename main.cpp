@@ -38,15 +38,7 @@ int main()
 	{
 		// Client stuff...
 		Client client;
-		bool bMainServerOnline= client.isOfficalServerOnline();
-		CLEAR_SCREEN
-		std::cout << "Main Server Status: " << (bMainServerOnline ? "Online" : "Offline") << std::endl;
-		std::cout << "1: Join main server\n";
-		ReadAndWrite::getInputAsString(input);
-		if(input=="1")
-		{
-
-		}
+		client.openMenu();
 	}
 	/*
 	Blockchain chain;

@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include "Blockchain.h"
 
-void Server::onClientConnect()
+void Server::listenAndObeyClients()
 {
 	while(true)
 	{
@@ -55,31 +55,45 @@ void Server::onClientConnect()
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
-		std::cout << "IP address: " << inet_ntoa(address.sin_addr) << std::endl;
 		valread = read(new_socket, buffer, 1024);
-		std::cout<< buffer << std::endl;
 		std::string bufferStr(buffer);
 		if(bufferStr=="PleaseSendYourCopyOfTheBlockchainThanks")
 		{
-			//send(new_socket,)
+			//sendMessageToServer(new_socket,)
 		}
 		else if(bufferStr=="Hello! Are you awake?")
 		{
 			std::string awake = "Yeah, I'm awake";
 			send(new_socket,awake.c_str(),awake.length(),0);
+			std::cout << "Received ping from " << inet_ntoa(address.sin_addr) << std::endl;
 		}
+		else if(bufferStr=="Logging in...")
+		{
+			std::cout << "Client logged in\n";
+			clientsConnected++;
+		}
+		else if(bufferStr=="Disconnecting...")
+		{
+			std::cout << "Client disconnected\n";
+			clientsConnected--;
+		}
+		close(server_fd);
 	}
 }
 
 void Server::start()
 {
-	std::thread tAcceptClients(&Server::onClientConnect,this);
+	std::thread tAcceptClients(&Server::listenAndObeyClients, this);
 	// distribute blockchain to those who don't already have one
 	// 
 	std::string input;
 	while(input!="s")
+	{
 		ReadAndWrite::getInputAsString(input);
+		if(input=="list")
+		{
+			std::cout << "Clients Connected: " << clientsConnected << std::endl;
+		}
+	}
 	tAcceptClients.detach();
 }
-
-

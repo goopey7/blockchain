@@ -12,9 +12,9 @@
 #include <arpa/inet.h>
 #include <string>
 #include "Blockchain.h"
-//#define OFFICIAL_IP "192.168.103.187"
+#define OFFICIAL_IP "192.168.103.187"
 //#define OFFICIAL_IP "74.72.186.84"
-#define OFFICIAL_IP "_official._tcp.blockchain.samcollier.tech"
+//#define OFFICIAL_IP "_official._tcp.blockchain.samcollier.tech"
 #define PORT 9162
 
 #define SERVER_PING_SEND_MESSAGE "Hello! Are you awake?"
@@ -28,8 +28,10 @@ private:
 	bool bOfficialServerIsOnline=false;
 	void waitFiveSeconds();
 	void pingMainServer();
+	std::string sendMessageToServer(std::string message,std::string ip,int port,bool bExpectResponse=false);
 public:
 	Client();
+	~Client();
 	bool isOfficalServerOnline(){return bOfficialServerIsOnline;}
 	void openMenu();
 	void joinServer(std::string ip,int port);
