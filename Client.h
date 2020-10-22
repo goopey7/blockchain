@@ -4,7 +4,6 @@
 
 #ifndef BLOCKCHAIN_CLIENT_H
 #define BLOCKCHAIN_CLIENT_H
-
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -12,13 +11,28 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
-#define OFFICIAL_IP "blockchain.samcollier.tech"
-#define PORT 8080
+#include "Blockchain.h"
+//#define OFFICIAL_IP "192.168.103.187"
+//#define OFFICIAL_IP "74.72.186.84"
+#define OFFICIAL_IP "_official._tcp.blockchain.samcollier.tech"
+#define PORT 9162
+
+#define SERVER_PING_SEND_MESSAGE "Hello! Are you awake?"
+#define SERVER_PING_RECV_MESSAGE "Yeah, I'm awake"
+
+#include <thread>
 
 class Client
 {
+private:
+	bool bOfficialServerIsOnline=false;
+	void waitFiveSeconds();
+	void pingMainServer();
 public:
-	int start();
+	Client();
+	bool isOfficalServerOnline(){return bOfficialServerIsOnline;}
+	void openMenu();
+	void joinServer(std::string ip,int port);
 };
 
 

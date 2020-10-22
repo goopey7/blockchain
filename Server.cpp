@@ -63,8 +63,11 @@ void Server::onClientConnect()
 		{
 			//send(new_socket,)
 		}
-		send(new_socket, hello.c_str(), hello.length(), 0);
-		std::cout << "Hello message sent\n";
+		else if(bufferStr=="Hello! Are you awake?")
+		{
+			std::string awake = "Yeah, I'm awake";
+			send(new_socket,awake.c_str(),awake.length(),0);
+		}
 	}
 }
 
@@ -74,9 +77,9 @@ void Server::start()
 	// distribute blockchain to those who don't already have one
 	// 
 	std::string input;
-	/*while(input!="s")
+	while(input!="s")
 		ReadAndWrite::getInputAsString(input);
-	tAcceptClients.detach();*/
+	tAcceptClients.detach();
 }
 
 

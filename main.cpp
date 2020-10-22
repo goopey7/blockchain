@@ -13,23 +13,50 @@ int main()
 /*#include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "LLNode.h"
-#include "Block.h"
 
 #define PORT 8080
 */
-#include "Blockchain.h"
+
 #include <iostream>
+#include "Server.h"
+#include "Client.h"
+
 int main()
 {
+	std::cout << "1: Server\n";
+	std::cout << "2: Client\n";
+	std::string input;
+	ReadAndWrite::getInputAsString(input);
+	CLEAR_SCREEN
+	if(input=="1")
+	{
+		// Server stuff...
+		Server server;
+		server.start();
+	}
+	else if(input=="2")
+	{
+		// Client stuff...
+		Client client;
+		bool bMainServerOnline= client.isOfficalServerOnline();
+		CLEAR_SCREEN
+		std::cout << "Main Server Status: " << (bMainServerOnline ? "Online" : "Offline") << std::endl;
+		std::cout << "1: Join main server\n";
+		ReadAndWrite::getInputAsString(input);
+		if(input=="1")
+		{
+
+		}
+	}
+	/*
 	Blockchain chain;
 	chain.read("blockchain.txt");
-/*
+
 	chain.addBlockToChain("How are we?");
 	chain.addBlockToChain("Hello there");
 	chain.addBlockToChain("hmmmmmmm");
 	chain.validateChain();
-	*/for(int i=0;i<chain.size();i++)
+	for(int i=0;i<chain.size();i++)
 	{
 		std::cout << "*******************************************************\n";
 		std::cout << chain.at(i)->getIndex() << std::endl;
@@ -39,4 +66,6 @@ int main()
 		std::cout << "*******************************************************\n";
 	}
 	chain.write("blockchain.txt");
+	*/
+	return 0;
 }

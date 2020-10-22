@@ -3,7 +3,6 @@
 //
 
 #include "Blockchain.h"
-#include "ReadAndWrite.h"
 
 bool Blockchain::validateChain()
 {

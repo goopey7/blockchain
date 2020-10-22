@@ -4,12 +4,22 @@
 
 #ifndef AUTHENTICATIONPROGRAM_READANDWRITE_H
 #define AUTHENTICATIONPROGRAM_READANDWRITE_H
-
+#pragma once
 #include <string>
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
+
+#ifdef _WIN32 // we are compiling in windows
+#include <Windows.h>
+#define CLEAR_SCREEN system("cls");
+#define WAIT_ONE_SECOND Sleep(1000);
+#else // we are compiling on linux
+#include <unistd.h>
+#define CLEAR_SCREEN system("clear");
+#define WAIT_ONE_SECOND sleep(1);
+#endif
 
 class ReadAndWrite
 {
@@ -18,35 +28,5 @@ public:
 	static std::vector<std::string>* readFile(std::string inFileName);
 	static void writeFile(std::vector<std::string>* outFileContents,std::string outFileName);
 };
-
-void ReadAndWrite::getInputAsString(std::string& input)
-{
-	std::getline(std::cin, input);
-}
-
-std::vector<std::string>* ReadAndWrite::readFile(std::string inFileName)
-{
-	// read into our database line by line
-	auto* lines=new std::vector<std::string>;
-	std::ifstream inFile(inFileName);
-	std::string line;
-	while(std::getline(inFile,line))
-		lines->push_back(line);
-	return lines;
-}
-
-void ReadAndWrite::writeFile(std::vector<std::string>* outFileContents, std::string outFileName)
-{
-	std::ofstream outFile;
-	outFile.open(outFileName);
-	std::string outString;
-	for(int i=0;i<outFileContents->size();i++)
-	{
-		outString+=outFileContents->at(i);
-		if(outFileContents->size()>1&&i<outFileContents->size()-1)outString+="\n";
-	}
-	outFile << outString;
-	outFile.close();
-}
 
 #endif //AUTHENTICATIONPROGRAM_READANDWRITE_H

@@ -4,10 +4,10 @@
 
 #ifndef BLOCKCHAIN_BLOCKCHAIN_H
 #define BLOCKCHAIN_BLOCKCHAIN_H
-
-
+#pragma once
 #include "LLNode.h"
 #include "Block.h"
+#include "ReadAndWrite.h"
 
 class Blockchain
 {

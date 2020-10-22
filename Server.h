@@ -11,8 +11,9 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string>
+#include "Blockchain.h"
 
-#define PORT 8080
+#define PORT 9162
 
 class Server
 {
