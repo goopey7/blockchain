@@ -23,7 +23,7 @@ public:
 	uint64_t size(){return chain.size();}
 
 	void read(std::string fileName);
-	void write(std::string fileName);
+	std::vector<std::string>* write(std::string fileName);
 };
 
 #endif //BLOCKCHAIN_BLOCKCHAIN_H

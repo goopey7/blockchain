@@ -18,6 +18,7 @@
 class Server
 {
 private:
+	Blockchain chain;
 	int clientsConnected=0;
 public:
 	void listenAndObeyClients();

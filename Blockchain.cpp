@@ -73,21 +73,22 @@ void Blockchain::read(std::string fileName)
 	}
 }
 
-void Blockchain::write(std::string fileName)
+std::vector<std::string>* Blockchain::write(std::string fileName)
 {
-	std::vector<std::string> outVector;
+	std::vector<std::string>* outVector=new std::vector<std::string>;
 	for(int i=0;i<chain.size();i++)
 	{
 		Block* blockToWrite = chain.at(i);
-		outVector.push_back("BLOCK");
-		outVector.push_back("{");
-		outVector.push_back("Index:"+std::to_string(blockToWrite->getIndex()));
-		outVector.push_back("Data:"+blockToWrite->getData());
-		outVector.push_back("PreviousHash:"+blockToWrite->getPrevHash());
-		outVector.push_back("TimeStamp:"+blockToWrite->getTimeStamp());
-		outVector.push_back("Nonce:"+std::to_string(blockToWrite->getNonce()));
-		outVector.push_back("Difficulty:"+std::to_string(blockToWrite->getDifficulty()));
-		outVector.push_back("}");
+		outVector->push_back("BLOCK");
+		outVector->push_back("{");
+		outVector->push_back("Index:"+std::to_string(blockToWrite->getIndex()));
+		outVector->push_back("Data:"+blockToWrite->getData());
+		outVector->push_back("PreviousHash:"+blockToWrite->getPrevHash());
+		outVector->push_back("TimeStamp:"+blockToWrite->getTimeStamp());
+		outVector->push_back("Nonce:"+std::to_string(blockToWrite->getNonce()));
+		outVector->push_back("Difficulty:"+std::to_string(blockToWrite->getDifficulty()));
+		outVector->push_back("}");
 	}
-	ReadAndWrite::writeFile(&outVector,fileName);
+	ReadAndWrite::writeFile(outVector,fileName);
+	return outVector;
 }

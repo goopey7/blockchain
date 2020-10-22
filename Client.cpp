@@ -64,7 +64,18 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 
 void Client::joinServer(std::string ip, int port)
 {
+	chain.read("blockchain.txt");
 	sendMessageToServer("Logging in...",ip,port);
+	std::string serverChain = sendMessageToServer("PleaseSendYourCopyOfTheBlockchainThanks",
+											   ip,port,true);
+	if(serverChain.find("BLOCKCHAIN_INCOMING:")!=std::string::npos)
+	{
+		while(serverChain.find("Block"))
+		{
+			std::string firstIndex = serverChain.substr(serverChain.find_first_of("Index:"));
+			int a = 3;
+		}
+	}
 }
 
 void Client::openMenu()

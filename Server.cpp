@@ -59,7 +59,14 @@ void Server::listenAndObeyClients()
 		std::string bufferStr(buffer);
 		if(bufferStr=="PleaseSendYourCopyOfTheBlockchainThanks")
 		{
-			//sendMessageToServer(new_socket,)
+			std::cout<<"Sending blockchain to client\n";
+			std::vector<std::string>* chainToSend=chain.write("blockchain.txt");
+			std::string chainStr="BLOCKCHAIN_INCOMING:";
+			for(int i=0;i<chainToSend->size();i++)
+			{
+				chainStr+=chainToSend->at(i);
+				chainStr+="\n";
+			}
 		}
 		else if(bufferStr=="Hello! Are you awake?")
 		{

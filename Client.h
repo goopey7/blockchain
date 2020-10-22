@@ -26,6 +26,8 @@ class Client
 {
 private:
 	bool bOfficialServerIsOnline=false;
+	Blockchain chain;
+	Blockchain serverChain;
 	void waitFiveSeconds();
 	void pingMainServer();
 	std::string sendMessageToServer(std::string message,std::string ip,int port,bool bExpectResponse=false);
