@@ -104,6 +104,7 @@ T* LLNode<T>::set(uint64_t index, T* _data)
 template<class T>
 uint64_t LLNode<T>::size()
 {
+	if(next== nullptr&&data== nullptr)return 0;
 	if(next==nullptr)return 1;
 	return next->size()+1;
 }
@@ -112,7 +113,7 @@ template<class T>
 void LLNode<T>::add(T* _data)
 {
 	// we have just created the list for the first time
-	if(next==nullptr&&data==nullptr&&size()==1)
+	if(next==nullptr&&data==nullptr&&size()==0)
 		data=_data;
 	else if(next==nullptr) // if we reach the end of the list
 		next = new LLNode<T>(_data);
@@ -123,9 +124,10 @@ void LLNode<T>::add(T* _data)
 template<class T>
 void LLNode<T>::clear()
 {
+	if(size()==0&&next== nullptr&&data== nullptr)return;
 	if(this== nullptr)return;
 	if(next!=nullptr)next->clear();
-	if(next==nullptr)
+	if(next==nullptr&&data!=nullptr)
 	{
 		delete this;
 	}

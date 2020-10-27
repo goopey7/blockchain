@@ -38,7 +38,7 @@ int main()
 	{
 		// Client stuff...
 		Client client;
-		client.openMenu();
+		client.openMainMenu();
 	}
 	/*
 	Blockchain chain;

@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string>
+#include <thread>
 #include "Blockchain.h"
 
 #define PORT 9162
@@ -19,10 +20,15 @@ class Server
 {
 private:
 	Blockchain chain;
-	int clientsConnected=0;
+	int numClientsConnected=0;
+	std::vector<std::string> connectedClients;
+	std::vector<std::thread*> threads;
+	void acceptClients();
+	void pingClients();
 public:
 	Server();
-	void listenAndObeyClients();
+	void listenAndObeyClient();
+	void pingConnectedClients();
 	void start();
 };
 

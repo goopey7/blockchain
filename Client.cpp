@@ -12,7 +12,8 @@ Client::Client()
 
 Client::~Client()
 {
-	sendMessageToServer("Disconnecting...",OFFICIAL_IP,PORT);
+	pingThread->detach();
+	disconnect();
 }
 
 void Client::pingMainServer()
@@ -64,12 +65,33 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 
 void Client::joinServer(std::string ip, int port)
 {
+	sendMessageToServer("Logging in...",ip,port);
 	chain.read("ClientBlockchain.txt");
-	std::string serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
-	//sendMessageToServer("Logging in...",ip,port);
+
+	std::string serverChainStr;
+	while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
+	{
+		serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
+		// 100ms is too fast for me. 250ms works, so just in case I'll make it 500ms
+		// we have to wait until the server is ready to receive another message otherwise our request for the blockchain will be dropped.
+		std::this_thread::sleep_for(std::chrono::milliseconds(100)); // https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
+	}
+
 	if(serverChainStr=="EMPTY_CHAIN")
 	{
 		//TODO if ClientChain length is greater than one, send our chain to the server
+		if(chain.size()>0)
+		{
+			std::vector<std::string>* chainToSend=chain.write("ClientBlockchain.txt");
+			std::string chainStr="BLOCKCHAIN_UPDATE_REQ:";
+			for(int i=0;i<chainToSend->size();i++)
+			{
+				chainStr+=chainToSend->at(i);
+			}
+			sendMessageToServer(chainStr,ip,port);
+			std::cout << "Blockchain sent\n";
+		}
+		//TODO Server should PING Clients to make sure they are still connected
 	}
 	else if(serverChainStr.find("BLOCKCHAIN_INCOMING:") != std::string::npos)
 	{
@@ -88,11 +110,21 @@ void Client::joinServer(std::string ip, int port)
 				lineToAdd+=serverChainStr.c_str()[i];
 			i++;
 		}
-		ReadAndWrite::writeFile(&readChain,"ClientBlockchain.txt");
+		ReadAndWrite::writeFile(&readChain,"Client'sCopyOfServerBlockchain.txt");
+		serverChain.read("Client'sCopyOfServerBlockchain.txt");
+	}
+	if(serverChain.size()>=chain.size())
+	{
+		chain=serverChain;
+		chain.write("ClientBlockchain.txt");
+	}
+	else
+	{
+		//TODO send our chain to be verified by other clients
 	}
 }
 
-void Client::openMenu()
+void Client::openMainMenu()
 {
 	bool bBadInput=false;
 	std::string input;
@@ -116,6 +148,8 @@ void Client::openMenu()
 		if(input=="1")
 		{
 			joinServer(OFFICIAL_IP,PORT);
+			std::string ip = OFFICIAL_IP;
+			pingThread = new std::thread(&Client::listenForPing, this, &ip);
 		}
 		if(input.empty()) // Enter to refresh menu
 		{
@@ -123,4 +157,60 @@ void Client::openMenu()
 		}
 	}
 	while(input!="e");
+}
+
+void Client::disconnect()
+{
+	sendMessageToServer("Disconnecting...",OFFICIAL_IP,PORT);
+}
+
+void Client::listenForPing(std::string* ip)
+{
+	int server_fd, new_socket, valread;
+	struct sockaddr_in address;
+	int opt = 1;
+	int addrlen = sizeof(address);
+	char buffer[1024] = {0};
+	std::string hello = "Hello from server";
+
+	// Creating socket file descriptor
+	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+	{
+		perror("socket failed");
+		exit(EXIT_FAILURE);
+	}
+
+	// Forcefully attaching socket to the port 8080
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+				   &opt, sizeof(opt)))
+	{
+		perror("setsockopt");
+		exit(EXIT_FAILURE);
+	}
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(PORT);
+
+	// Forcefully attaching socket to the port 8080
+	if (bind(server_fd, (struct sockaddr*) &address,
+			 sizeof(address)) < 0)
+	{
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+	if (listen(server_fd, 3) < 0)
+	{
+		perror("listenForPing");
+		exit(EXIT_FAILURE);
+	}
+	if ((new_socket = accept(server_fd, (struct sockaddr*) &address,
+							 (socklen_t*) &addrlen)) < 0)
+	{
+		perror("accept");
+		exit(EXIT_FAILURE);
+	}
+	valread = read(new_socket, buffer, 1024);
+	std::string bufferStr(buffer);
+	if(bufferStr=="are you still there?")
+		sendMessageToServer("Yep, still here",*ip,PORT);
 }
