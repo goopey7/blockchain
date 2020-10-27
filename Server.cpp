@@ -57,16 +57,22 @@ void Server::listenAndObeyClients()
 		}
 		valread = read(new_socket, buffer, 1024);
 		std::string bufferStr(buffer);
-		if(bufferStr=="PleaseSendYourCopyOfTheBlockchainThanks")
+		if(bufferStr=="SEND_CHAIN")
 		{
 			std::cout<<"Sending blockchain to client\n";
-			std::vector<std::string>* chainToSend=chain.write("blockchain.txt");
+			std::vector<std::string>* chainToSend=chain.write("ServerBlockchain.txt");
+			if(chainToSend== nullptr)
+			{
+				send(new_socket,"EMPTY_CHAIN",11,0);
+				break;
+			}
 			std::string chainStr="BLOCKCHAIN_INCOMING:";
 			for(int i=0;i<chainToSend->size();i++)
 			{
 				chainStr+=chainToSend->at(i);
-				chainStr+="\n";
 			}
+			send(new_socket,chainStr.c_str(),chainStr.length(),0);
+			std::cout << "Blockchain sent\n";
 		}
 		else if(bufferStr=="Hello! Are you awake?")
 		{
@@ -103,4 +109,9 @@ void Server::start()
 		}
 	}
 	tAcceptClients.detach();
+}
+
+Server::Server()
+{
+	chain.read("ServerBlockchain.txt");
 }

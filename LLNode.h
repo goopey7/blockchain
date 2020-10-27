@@ -123,7 +123,8 @@ void LLNode<T>::add(T* _data)
 template<class T>
 void LLNode<T>::clear()
 {
-	if(next!= nullptr)next->clear();
+	if(this== nullptr)return;
+	if(next!=nullptr)next->clear();
 	if(next==nullptr)
 	{
 		delete this;

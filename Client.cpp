@@ -64,17 +64,31 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 
 void Client::joinServer(std::string ip, int port)
 {
-	chain.read("blockchain.txt");
-	sendMessageToServer("Logging in...",ip,port);
-	std::string serverChain = sendMessageToServer("PleaseSendYourCopyOfTheBlockchainThanks",
-											   ip,port,true);
-	if(serverChain.find("BLOCKCHAIN_INCOMING:")!=std::string::npos)
+	chain.read("ClientBlockchain.txt");
+	std::string serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
+	//sendMessageToServer("Logging in...",ip,port);
+	if(serverChainStr=="EMPTY_CHAIN")
 	{
-		while(serverChain.find("Block"))
+		//TODO if ClientChain length is greater than one, send our chain to the server
+	}
+	else if(serverChainStr.find("BLOCKCHAIN_INCOMING:") != std::string::npos)
+	{
+		std::vector<std::string> readChain;
+		serverChainStr = serverChainStr.substr(std::string("BLOCKCHAIN_INCOMING:").length());
+		std::string lineToAdd;
+		int i=0;
+		while(i<serverChainStr.length())
 		{
-			std::string firstIndex = serverChain.substr(serverChain.find_first_of("Index:"));
-			int a = 3;
+			if(serverChainStr.c_str()[i]=='\n')
+			{
+				readChain.push_back(lineToAdd);
+				lineToAdd="";
+			}
+			else
+				lineToAdd+=serverChainStr.c_str()[i];
+			i++;
 		}
+		ReadAndWrite::writeFile(&readChain,"ClientBlockchain.txt");
 	}
 }
 

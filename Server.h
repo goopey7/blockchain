@@ -21,6 +21,7 @@ private:
 	Blockchain chain;
 	int clientsConnected=0;
 public:
+	Server();
 	void listenAndObeyClients();
 	void start();
 };
