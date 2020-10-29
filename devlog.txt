@@ -56,3 +56,9 @@ they won't have their purchased item. So, probably best to have the block entry 
 be using UE4 server, so just bung in my blockchain code and link it up to their real money purchase system and that should do it. Also, when a player renames an item,
 that block should also be entered from the game server, which should have authority over the cannonical state of the game. Easier said than done :)
 
+Wednesday (10/28/20)
+Fixed some issues with closing threads and freeing memory consumed by the blockchains stored on the client.
+Works now. Also got rid of any implementations of any server to client communications.
+Next, I'm going to have to get the clients to ping the server for a blockchain every 100ms or something. Or mayber perhaps
+as the chain gets bigger, the rate at which the clients ping the server decreases. So as not to overload the server.
+However, while I'm testing it, it's probably never going to get too big to handle every 100ms with a few clients connected.
