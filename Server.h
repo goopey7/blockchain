@@ -20,11 +20,8 @@ class Server
 {
 private:
 	Blockchain chain;
-	int numClientsConnected=0;
-	std::vector<std::string> connectedClients;
 	std::vector<std::thread*> threads;
 	void acceptClients();
-	void pingClients();
 public:
 	Server();
 	void listenAndObeyClient();
