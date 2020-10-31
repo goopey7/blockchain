@@ -39,6 +39,9 @@ public:
 	LLNode<T>* getNextNode();
 	T* getData();
 
+	// Overload [] operator to access elements of the list
+	T* operator[](uint64_t);
+
 	// get element at index
 	T* at(uint64_t index);
 
@@ -79,6 +82,12 @@ template<class T>
 T* LLNode<T>::getData()
 {
 	return data;
+}
+
+template<class T>
+T* LLNode<T>::operator[](uint64_t index)
+{
+	return at(index);
 }
 
 template<class T>

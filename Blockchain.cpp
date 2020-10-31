@@ -9,7 +9,7 @@ bool Blockchain::validateChain()
 	//TODO add a check for chronological order
 	for(int i=1;i<chain.size();i++)
 	{
-		if(chain.at(i-1)->generateHash()!=chain.at(i)->getPrevHash())
+		if(chain[i-1]->generateHash()!=chain[i]->getPrevHash())
 			return false;
 	}
 	return true;
@@ -31,7 +31,7 @@ void Blockchain::addBlockToChain(std::string data)
 	}
 	else
 	{
-		blockToAdd->setPrevHash(chain.at(chain.size()-1)->generateHash());
+		blockToAdd->setPrevHash(chain[chain.size()-1]->generateHash());
 		blockToAdd->setIndex(chain.size());
 	}
 	mineBlock(blockToAdd);
@@ -87,7 +87,7 @@ std::vector<std::string>* Blockchain::write(std::string fileName)
 		std::vector<std::string>* outVector=new std::vector<std::string>;
 		for(int i=0;i<chain.size();i++)
 		{
-			Block* blockToWrite = chain.at(i);
+			Block* blockToWrite = chain[i];
 			if(blockToWrite== nullptr)return nullptr;
 			outVector->push_back("BLOCK");
 			outVector->push_back("{");

@@ -143,6 +143,7 @@ void Server::listenAndObeyClient()
 			}
 			send(new_socket,chainStr.c_str(),chainStr.length(),0);
 			std::cout << "Blockchain sent to " << inet_ntoa(address.sin_addr) << std::endl;
+			delete chainToSend;
 		}
 		else if(bufferStr.find("BLOCKCHAIN_UPDATE_REQ:")!=std::string::npos)
 		{
