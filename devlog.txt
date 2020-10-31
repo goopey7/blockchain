@@ -27,38 +27,52 @@ Added functions for reading and writing the chain to a file.
 Tuesday (10/27/20)
 Wow I really took a break from this. Whoops. Today I spent hours working to make up for it.
 Now when the client joins a server, it successfully acquires the server's copy and then compares it to its own
-to see which one has the most blocks. If the client's number of blocks is less than or equal to the server's numberOfBlocks,
-the client sets its own local chain equal to the one acquired from the server.
+to see which one has the most blocks. If the client's number of blocks is less than or equal to the server's
+numberOfBlocks, the client sets its own local chain equal to the one acquired from the server.
 
-I just spent a rediculous amount of time trying to figure out how the server would go about distributing its copy of the blockchain
-to all connected clients. I was gathering a running list of ip addresses and then every 100ms pinging every ip in the list to see if
-they respond. If they don't, they get removed from the list. This really messed things up since this program is super multi-threaded.
-And to make matters worse, I was running both the server and the client on the same machine and I was using my private IP to connect.
-Since I was sending information both from server to client and from client to server simultaneously, messages that were meant for the server
-were getting captured in the client and vice versa.
+I just spent a ridiculous amount of time trying to figure out how the server would go about distributing its copy of the
+blockchain to all connected clients. I was gathering a running list of ip addresses and then every 100ms pinging every
+ip in the list to see if they respond. If they don't, they get removed from the list. This really messed things up since
+this program is super multi-threaded. And to make matters worse, I was running both the server and the client on the
+same machine and I was using my private IP to connect. Since I was sending information both from server to client and
+from client to server simultaneously, messages that were meant for the server were getting captured in the client and
+vice versa.
 
-So, I stopped and had a little think and just realized that it's best to not have the server directly contact the client at all on a separate socket.
-This would also remove the requirement for the clients to port forward. The solution I came up with is actually quite simple and it should work once implemented.
-Simply have the clients ping the server for blockchain updates every second, and have the server send its blockchain through the same socket.
-Very similar to how a TCP reverse shell attack works since the beauty of it is that the victim does not need to port forward. This will also save me from having a
-reason to implement UDP hole punching which I don't see happening by Nov 3. But it's unneccessary for this project if we are going with reverse TCP which
-seems like a very good idea.
+So, I stopped and had a little think and just realized that it's best to not have the server directly contact the client
+at all on a separate socket. This would also remove the requirement for the clients to port forward. The solution I came
+up with is actually quite simple and it should work once implemented. Simply have the clients ping the server for
+blockchain updates every second, and have the server send its blockchain through the same socket. Very similar to how a
+TCP reverse shell attack works since the beauty of it is that the victim does not need to port forward.
+This will also save me from having a reason to implement UDP hole punching which I don't see happening by Nov 3. But
+it's unnecessary for this project if we are going with reverse TCP which seems like a very good idea.
 
 I probably added a ton of substantial stuff, but I can't remember anything else right now...
 
-I also had another idea on how my application of the blockchain could be helpful. It could really reassure the buyer in a grey market situation.
-Let's say someone wanted to sell a rare in-game sword that they worked hard to get, and that sword can be personalised by the owner, so it can have a custom name.
-The buyer can ask the seller to rename said sword to something they specify. Then they can check for a block where the buyer renamed the sword, and feel a lot
-better about making the transaction. The code used in this program could also be integrated directly into a C++ game engine like Unreal Engine 4 which can also be how
-players can make purchases with real money (UE4 has external plugins that would handle the real money side of things), and then once the purchase is marked as successful,
-the engine adds a block to the chain. The only issue is if the purchase succeeds, but then the player immediately shuts off their computer,
-they won't have their purchased item. So, probably best to have the block entry occur on the game studio's side of things. If their game is an MMO, then they will already
-be using UE4 server, so just bung in my blockchain code and link it up to their real money purchase system and that should do it. Also, when a player renames an item,
-that block should also be entered from the game server, which should have authority over the cannonical state of the game. Easier said than done :)
+I also had another idea on how my application of the blockchain could be helpful. It could really reassure the buyer in
+a grey market situation. Let's say someone wanted to sell a rare in-game sword that they worked hard to get, and that
+sword can be personalised by the owner, so it can have a custom name. The buyer can ask the seller to rename said sword
+to something they specify. Then they can check for a block where the buyer renamed the sword, and feel a lot better
+about making the transaction. The code used in this program could also be integrated directly into a C++ game engine
+like Unreal Engine 4 which can also be how players can make purchases with real money (UE4 has external plugins that
+would handle the real money side of things), and then once the purchase is marked as successful, the engine adds a block
+to the chain. The only issue is if the purchase succeeds, but then the player immediately shuts off their computer, they
+won't have their purchased item. So, probably best to have the block entry occur on the game studio's side of things.
+If their game is an MMO, then they will already be using UE4 server, so just bung in my blockchain code and link it up
+to their real money purchase system and that should do it. Also, when a player renames an item, that block should also
+be entered from the game server, which should have authority over the canonical state of the game.
+Easier said than done :)
 
 Wednesday (10/28/20)
 Fixed some issues with closing threads and freeing memory consumed by the blockchains stored on the client.
 Works now. Also got rid of any implementations of any server to client communications.
-Next, I'm going to have to get the clients to ping the server for a blockchain every 100ms or something. Or mayber perhaps
-as the chain gets bigger, the rate at which the clients ping the server decreases. So as not to overload the server.
-However, while I'm testing it, it's probably never going to get too big to handle every 100ms with a few clients connected.
+Next, I'm going to have to get the clients to ping the server for a blockchain every 100ms or something.
+Or maybe perhaps as the chain gets bigger, the rate at which the clients ping the server decreases.
+So as not to overload the server.
+However, while I'm testing it, it's probably never going to get too big to handle every 100ms with
+a few clients connected.
+
+Friday (10/30/20)
+Had oral surgery. Removed a wisdom tooth.
+
+Saturday (10/31/20)
+Requested an extension. Hopefully I'll make some progress tonight, but we'll see.
