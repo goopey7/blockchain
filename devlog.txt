@@ -76,3 +76,12 @@ Had oral surgery. Removed a wisdom tooth.
 
 Saturday (10/31/20)
 Requested an extension. Hopefully I'll make some progress tonight, but we'll see.
+
+Tuesday (11/3/20)
+I got into my favourite university! I'll be doing Computer Games Technology at Abertay University in Sep 2021!
+Also, my client now pulls the blockchain from the server every second. And it sends the blockchain
+to the server if the client's blockchain is longer than the server's. The client can also add blocks
+through the UI, it's very rudimentary right now. Since I don't have a class for whatever data is being stored
+in my Block's. I still need to figure that out. I also need to figure out how mining will work.
+Right now the person who adds the block, also mines the block. I'm not sure whether I should give other clients
+the opportunity to mine blocks, but it'd take more work, so for now I'm going to leave it with the creator of the block.
