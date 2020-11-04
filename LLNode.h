@@ -134,7 +134,7 @@ template<class T>
 void LLNode<T>::clear()
 {
 	if(size()==0&&next== nullptr&&data== nullptr)return;
-	if(this== nullptr)return;
+	if(this==nullptr)return;
 	if(next!=nullptr)next->clear();
 	if(next==nullptr&&data!=nullptr)
 	{

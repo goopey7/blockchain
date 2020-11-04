@@ -145,9 +145,32 @@ void Server::listenAndObeyClient()
 			std::cout << "Blockchain sent to " << inet_ntoa(address.sin_addr) << std::endl;
 			delete chainToSend;
 		}
+		// If we are receiving a client's blockchain
 		else if(bufferStr.find("BLOCKCHAIN_UPDATE_REQ:")!=std::string::npos)
 		{
+			std::vector<std::string> clientChain;
+			std::string clientChainStr = bufferStr.substr(std::string("BLOCKCHAIN_UPDATE_REQ:").length());
+			std::string lineToAdd;
+			int i=0;
+			while(i<clientChainStr.length())
+			{
+				if(clientChainStr.c_str()[i]=='\n')
+				{
+					clientChain.push_back(lineToAdd);
+					lineToAdd="";
+				}
+				else
+					lineToAdd+=clientChainStr.c_str()[i];
+				i++;
+			}
+			ReadAndWrite::writeFile(&clientChain,"Server'sCopyOfAClient.txt");
+			Blockchain incomingClientChain;
+			incomingClientChain.read("Server'sCopyOfAClient.txt");
 
+			//TODO This won't work when peers are validating a block.
+			// How do we handle when the server's block is deemed invalid?
+			if(incomingClientChain.length()>chain.length() && incomingClientChain.validateChain())
+				chain=incomingClientChain;
 		}
 		else if(bufferStr=="Hello! Are you awake?")
 		{

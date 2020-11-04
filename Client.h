@@ -26,11 +26,14 @@ class Client
 {
 private:
 	bool bOfficialServerIsOnline=false;
-	Blockchain chain;
-	Blockchain serverChain;
+	Blockchain* chain;
+	Blockchain* serverChain;
 	void waitFiveSeconds();
 	void pingMainServer();
 	std::string sendMessageToServer(std::string message,std::string ip,int port,bool bExpectResponse=false);
+	void sendChain(std::string ip, int port);
+	std::thread* tGrabChain;
+	bool bShuttingDown=false;
 public:
 	Client();
 	~Client();

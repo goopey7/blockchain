@@ -63,59 +63,67 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 
 void Client::grabChain(std::string ip, int port)
 {
-	chain.read("ClientBlockchain.txt");
-	std::string serverChainStr;
-	while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
+	while(!bShuttingDown)
 	{
-		serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
-		// 100ms is too fast for me. 250ms works, so just in case I'll make it 500ms
-		// we have to wait until the server is ready to receive another message otherwise our request for the blockchain will be dropped.
-		std::this_thread::sleep_for(std::chrono::milliseconds(100)); // https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
-	}
-
-	if(serverChainStr=="EMPTY_CHAIN")
-	{
-		//TODO Send our chain to be distributed by the server
-		if(chain.size()>0)
+		chain->read("ClientBlockchain->txt");
+		std::string serverChainStr;
+		while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
 		{
-			std::vector<std::string>* chainToSend=chain.write("ClientBlockchain.txt");
-			std::string chainStr="BLOCKCHAIN_UPDATE_REQ:";
-			for(int i=0;i<chainToSend->size();i++)
-			{
-				chainStr+=chainToSend->at(i);
-			}
-			sendMessageToServer(chainStr,ip,port);
-			std::cout << "Blockchain sent\n";
+			serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
+			// we have to wait until the server is ready to receive another message otherwise
+			// our request for the blockchain will be dropped.
+			// https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
-	}
-	else if(serverChainStr.find("BLOCKCHAIN_INCOMING:") != std::string::npos)
-	{
-		std::vector<std::string> readChain;
-		serverChainStr = serverChainStr.substr(std::string("BLOCKCHAIN_INCOMING:").length());
-		std::string lineToAdd;
-		int i=0;
-		while(i<serverChainStr.length())
+
+		if(serverChainStr=="EMPTY_CHAIN")
 		{
-			if(serverChainStr.c_str()[i]=='\n')
+			//TODO Send our chain to be distributed by the server
+			if(chain!=nullptr&&chain->size()>0)
 			{
-				readChain.push_back(lineToAdd);
-				lineToAdd="";
+				sendChain(ip,port);
+			}
+		}
+		else if(serverChainStr.find("BLOCKCHAIN_INCOMING:") != std::string::npos)
+		{
+			std::vector<std::string> readChain;
+			serverChainStr = serverChainStr.substr(std::string("BLOCKCHAIN_INCOMING:").length());
+			std::string lineToAdd;
+			int i=0;
+			while(i<serverChainStr.length())
+			{
+				if(serverChainStr.c_str()[i]=='\n')
+				{
+					readChain.push_back(lineToAdd);
+					lineToAdd="";
+				}
+				else
+					lineToAdd+=serverChainStr.c_str()[i];
+				i++;
+			}
+			ReadAndWrite::writeFile(&readChain,"Client'sCopyOfServerBlockchain.txt");
+			if(serverChain==nullptr)serverChain->clear();
+			serverChain = new Blockchain;
+			serverChain->read("Client'sCopyOfServerBlockchain.txt");
+		}
+		if(serverChain!=nullptr && chain!= nullptr)
+		{
+			if(serverChain->size()>=chain->size())
+			{
+				chain->clear();
+				for(int i=0;i<serverChain->length();i++)
+				{
+					chain->addBlockToChain(serverChain->at(i));
+				}
+				chain->write("ClientBlockchain.txt");
 			}
 			else
-				lineToAdd+=serverChainStr.c_str()[i];
-			i++;
+			{
+				//TODO send our chain to be verified by other clients
+				sendChain(ip,port);
+			}
 		}
-		ReadAndWrite::writeFile(&readChain,"Client'sCopyOfServerBlockchain.txt");
-		serverChain.read("Client'sCopyOfServerBlockchain.txt");
-	}
-	if(serverChain.size()>=chain.size())
-	{
-		chain=serverChain;
-		chain.write("ClientBlockchain.txt");
-	}
-	else
-	{
-		//TODO send our chain to be verified by other clients
+		sleep(1);
 	}
 }
 
@@ -152,14 +160,20 @@ void Client::openMainMenu()
 		}
 	}
 	while(input!="e");
+	std::cout << "Please wait a moment\n";
+	std::cout << "Shutting down...\n";
 	if(input=="e")return;
 	menuAfterLoggingIn:
+	// grab chain every second
+	bShuttingDown=false;
+	tGrabChain=new std::thread(&Client::grabChain,this,OFFICIAL_IP,PORT);
 	do
 	{
 		CLEAR_SCREEN
 		input="";
 		std::cout << "Main Server Status: " << (bOfficialServerIsOnline ? "Online" : "Offline") << std::endl;
-		std::cout << "1: Update blockchain\n";
+		std::cout << "1: Create New Block\n";
+		std::cout << "2: Explore Chain\n";
 		std::cout << "Enter: Refresh\n";
 		ReadAndWrite::getInputAsString(input);
 		try
@@ -173,7 +187,11 @@ void Client::openMainMenu()
 		}
 		if(input=="1")
 		{
-			grabChain(OFFICIAL_IP,PORT);
+			std::cout << "Enter data: ";
+			std::string input;
+			ReadAndWrite::getInputAsString(input);
+			chain->addBlockToChain(input);
+			sendChain(OFFICIAL_IP,PORT);
 		}
 		if(input.empty()) // Enter to refresh menu
 		{
@@ -181,5 +199,19 @@ void Client::openMainMenu()
 		}
 	}
 	while(input!="e");
+	bShuttingDown=true;
+	tGrabChain->detach();
 	goto clientMainMenu;
+}
+
+void Client::sendChain(std::string ip, int port)
+{
+	std::vector<std::string>* chainToSend=chain->write("ClientBlockchain.txt");
+	std::string chainStr="BLOCKCHAIN_UPDATE_REQ:";
+	for(int i=0;i<chainToSend->size();i++)
+	{
+		chainStr+=chainToSend->at(i);
+		chainStr+='\n';
+	}
+	sendMessageToServer(chainStr,ip,port);
 }

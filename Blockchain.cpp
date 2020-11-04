@@ -38,6 +38,11 @@ void Blockchain::addBlockToChain(std::string data)
 	chain.add(blockToAdd);
 }
 
+void Blockchain::addBlockToChain(Block* block)
+{
+	chain.add(block);
+}
+
 //TODO make multi-threaded!
 std::string Blockchain::mineBlock(Block* block)
 {
@@ -68,7 +73,7 @@ void Blockchain::read(std::string fileName)
 				std::string prevHash = blockchainFile->at(i+4).substr(std::string("PreviousHash:").length());
 				std::string timeStamp = blockchainFile->at(i+5).substr(std::string("TimeStamp:").length());
 				uint64_t nonce = std::stoll(blockchainFile->at(i+6).substr(std::string("Nonce:").length()));
-				short difficulty =
+				int difficulty =
 						std::stoi(blockchainFile->at(i+7).substr(std::string("Difficulty:").length()));
 				chain.add(new Block(index,data,prevHash,timeStamp,nonce,difficulty));
 			}
@@ -106,4 +111,9 @@ std::vector<std::string>* Blockchain::write(std::string fileName)
 	{
 		return nullptr;
 	}
+}
+
+Block* Blockchain::operator[](uint64_t index)
+{
+	return at(index);
 }
