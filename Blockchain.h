@@ -13,19 +13,19 @@ class Blockchain
 {
 private:
 	short currentDifficulty=1;
-	LLNode<Block> chain;
+	LLNode<Block>* chain=new LLNode<Block>;
 	std::string mineBlock(Block* block);
 public:
-	~Blockchain(){chain.clear();} //Destructor. Frees memory
+	~Blockchain(){chain->clear();} //Destructor. Frees memory
 	// Overload [] operator to access elements of the list
 	Block* operator[](uint64_t);
 	bool validateChain();
 	void addBlockToChain(std::string data);
 	void addBlockToChain(Block* block);
-	Block* at(uint64_t index){return chain.at(index);}
-	uint64_t size(){return chain.size();}
-	uint64_t length(){return chain.size();}
-	void clear(){chain.clear();}
+	Block* at(uint64_t index){return chain->at(index);}
+	uint64_t size(){return chain->size();}
+	uint64_t length(){return chain->size();}
+	void clear(){chain->clear();}
 	void read(std::string fileName);
 	std::vector<std::string>* write(std::string fileName);
 };

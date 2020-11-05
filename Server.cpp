@@ -129,7 +129,7 @@ void Server::listenAndObeyClient()
 		std::string bufferStr(buffer);
 		if(bufferStr=="SEND_CHAIN")
 		{
-			std::vector<std::string>* chainToSend=chain.write("ServerBlockchain.txt");
+			std::vector<std::string>* chainToSend=chain->write("ServerBlockchain.txt");
 			if(chainToSend== nullptr)
 			{
 				send(new_socket,"EMPTY_CHAIN",11,0);
@@ -164,13 +164,16 @@ void Server::listenAndObeyClient()
 				i++;
 			}
 			ReadAndWrite::writeFile(&clientChain,"Server'sCopyOfAClient.txt");
-			Blockchain incomingClientChain;
-			incomingClientChain.read("Server'sCopyOfAClient.txt");
+			Blockchain* incomingClientChain=new Blockchain;
+			incomingClientChain->read("Server'sCopyOfAClient.txt");
 
 			//TODO This won't work when peers are validating a block.
 			// How do we handle when the server's block is deemed invalid?
-			if(incomingClientChain.length()>chain.length() && incomingClientChain.validateChain())
+			if(incomingClientChain->length()>chain->length() && incomingClientChain->validateChain())
+			{
+				delete chain;
 				chain=incomingClientChain;
+			}
 		}
 		else if(bufferStr=="Hello! Are you awake?")
 		{
@@ -199,5 +202,5 @@ void Server::start()
 
 Server::Server()
 {
-	chain.read("ServerBlockchain.txt");
+	chain->read("ServerBlockchain.txt");
 }

@@ -7,9 +7,9 @@
 bool Blockchain::validateChain()
 {
 	//TODO add a check for chronological order
-	for(int i=1;i<chain.size();i++)
+	for(int i=1;i<chain->size();i++)
 	{
-		if(chain[i-1]->generateHash()!=chain[i]->getPrevHash())
+		if(chain->at(i-1)->generateHash()!=chain->at(i)->getPrevHash())
 			return false;
 	}
 	return true;
@@ -24,23 +24,23 @@ void Blockchain::addBlockToChain(std::string data)
 	// due to the nature of my linked list, it will always have at least one element.
 	// so to check if we need to make a genesis block we need to check to see if the first element contains
 	// a nullptr. Our chain variable is the first element in the list, so I can call getData() directly from it.
-	if(chain.size()==1&&chain.getData()==nullptr)
+	if(chain->size()==1&&chain->getData()==nullptr)
 	{
 		blockToAdd->setPrevHash("0"); // this is the genesis block
 		blockToAdd->setIndex(0);
 	}
 	else
 	{
-		blockToAdd->setPrevHash(chain[chain.size()-1]->generateHash());
-		blockToAdd->setIndex(chain.size());
+		blockToAdd->setPrevHash(chain->at(chain->size()-1)->generateHash());
+		blockToAdd->setIndex(chain->size());
 	}
 	mineBlock(blockToAdd);
-	chain.add(blockToAdd);
+	chain->add(blockToAdd);
 }
 
 void Blockchain::addBlockToChain(Block* block)
 {
-	chain.add(block);
+	chain->add(block);
 }
 
 //TODO make multi-threaded!
@@ -75,7 +75,7 @@ void Blockchain::read(std::string fileName)
 				uint64_t nonce = std::stoll(blockchainFile->at(i+6).substr(std::string("Nonce:").length()));
 				int difficulty =
 						std::stoi(blockchainFile->at(i+7).substr(std::string("Difficulty:").length()));
-				chain.add(new Block(index,data,prevHash,timeStamp,nonce,difficulty));
+				chain->add(new Block(index,data,prevHash,timeStamp,nonce,difficulty));
 			}
 		}
 	}
@@ -90,9 +90,9 @@ std::vector<std::string>* Blockchain::write(std::string fileName)
 	try
 	{
 		std::vector<std::string>* outVector=new std::vector<std::string>;
-		for(int i=0;i<chain.size();i++)
+		for(int i=0;i<chain->size();i++)
 		{
-			Block* blockToWrite = chain[i];
+			Block* blockToWrite = chain->at(i);
 			if(blockToWrite== nullptr)return nullptr;
 			outVector->push_back("BLOCK");
 			outVector->push_back("{");

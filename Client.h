@@ -26,7 +26,7 @@ class Client
 {
 private:
 	bool bOfficialServerIsOnline=false;
-	Blockchain* chain;
+	Blockchain* chain= nullptr;
 	Blockchain* serverChain;
 	void waitFiveSeconds();
 	void pingMainServer();

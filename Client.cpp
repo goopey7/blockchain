@@ -8,6 +8,8 @@
 Client::Client()
 {
 	pingMainServer();
+	chain=new Blockchain;
+	chain->read("ClientBlockchain.txt");
 }
 
 Client::~Client()
@@ -105,12 +107,19 @@ void Client::grabChain(std::string ip, int port)
 			if(serverChain==nullptr)serverChain->clear();
 			serverChain = new Blockchain;
 			serverChain->read("Client'sCopyOfServerBlockchain.txt");
-		}
-		if(serverChain!=nullptr && chain!= nullptr)
-		{
-			if(serverChain->size()>=chain->size())
+			uint64_t  srverSize=serverChain->size();
+			uint64_t  chainSize;
+			if(chain!= nullptr)
+				chainSize=chain->size();
+			else chainSize=0;
+			if(srverSize>=chainSize)
 			{
-				chain->clear();
+				if(chain!=nullptr)
+				{
+					//chain->clear();
+					delete chain;
+				}
+				chain = new Blockchain;
 				for(int i=0;i<serverChain->length();i++)
 				{
 					chain->addBlockToChain(serverChain->at(i));

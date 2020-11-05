@@ -19,7 +19,7 @@
 class Server
 {
 private:
-	Blockchain chain;
+	Blockchain* chain=new Blockchain;
 	std::vector<std::thread*> threads;
 	void acceptClients();
 public:
