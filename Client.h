@@ -19,6 +19,7 @@
 
 #define SERVER_PING_SEND_MESSAGE "Hello! Are you awake?"
 #define SERVER_PING_RECV_MESSAGE "Yeah, I'm awake"
+#define DELIM "***********%%%%%%%%%%%^^^^^^^^^^^^^^^MSG_END^^^^^^^^^^^^^^^%%%%%%%%%%%***********"
 
 #include <thread>
 

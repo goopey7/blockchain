@@ -27,6 +27,7 @@ void Client::pingMainServer()
 
 std::string Client::sendMessageToServer(std::string message,std::string ip,int port,bool bExpectResponse)
 {
+	message+=DELIM;
 	int sock = 0, valread;
 	struct sockaddr_in serv_addr;
 	char buffer[1024] = {0};
@@ -54,10 +55,17 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 	else if(bExpectResponse)
 	{
 		send(sock , message.c_str() , message.length() , 0 );
-		valread = read( sock , buffer, 1024);
-		std::string bufferStr = std::string(buffer);
+		//if for whatever reason we don't hear back from the server, we don't want both the server and the client
+		//to be stuck listening
+		std::string bufferStr;
+		while(bufferStr.find(DELIM)==std::string::npos)
+		{
+			valread = read(sock,buffer,1024);
+			//std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+			bufferStr += std::string(buffer);
+		}
 		close(sock);
-		return bufferStr;
+		return bufferStr.substr(0,bufferStr.find(DELIM));
 	}
 	else send(sock , message.c_str() , message.length() , 0 );
 	return "";
@@ -67,7 +75,6 @@ void Client::grabChain(std::string ip, int port)
 {
 	while(!bShuttingDown)
 	{
-		chain->read("ClientBlockchain->txt");
 		std::string serverChainStr;
 		while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
 		{
@@ -107,27 +114,23 @@ void Client::grabChain(std::string ip, int port)
 			if(serverChain==nullptr)serverChain->clear();
 			serverChain = new Blockchain;
 			serverChain->read("Client'sCopyOfServerBlockchain.txt");
-			uint64_t  srverSize=serverChain->size();
+			uint64_t  serverSize=serverChain->size();
 			uint64_t  chainSize;
 			if(chain!= nullptr)
 				chainSize=chain->size();
 			else chainSize=0;
-			if(srverSize>=chainSize)
+			if(serverSize>=chainSize)
 			{
 				if(chain!=nullptr)
 				{
-					//chain->clear();
 					delete chain;
 				}
-				chain = new Blockchain;
-				for(int i=0;i<serverChain->length();i++)
-				{
-					chain->addBlockToChain(serverChain->at(i));
-				}
+				chain = serverChain;
 				chain->write("ClientBlockchain.txt");
 			}
 			else
 			{
+				delete serverChain;
 				//TODO send our chain to be verified by other clients
 				sendChain(ip,port);
 			}
@@ -169,8 +172,6 @@ void Client::openMainMenu()
 		}
 	}
 	while(input!="e");
-	std::cout << "Please wait a moment\n";
-	std::cout << "Shutting down...\n";
 	if(input=="e")return;
 	menuAfterLoggingIn:
 	// grab chain every second
@@ -222,5 +223,12 @@ void Client::sendChain(std::string ip, int port)
 		chainStr+=chainToSend->at(i);
 		chainStr+='\n';
 	}
-	sendMessageToServer(chainStr,ip,port);
+	chainStr+=DELIM;
+	std::string response;
+	while(response!="REQ_RECVD")
+	{
+		response = sendMessageToServer(chainStr,ip,port,true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+
 }

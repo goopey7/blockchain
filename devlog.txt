@@ -80,12 +80,27 @@ Requested an extension. Hopefully I'll make some progress tonight, but we'll see
 Tuesday (11/3/20)
 I got into my favourite university! I'll be doing Computer Games Technology at Abertay University in Sep 2021!
 https://www.abertay.ac.uk/course-search/undergraduate/computer-games-technology/
-Also, my client now pulls the blockchain from the server every second. And it sends the blockchain
-to the server if the client's blockchain is longer than the server's. The client can also add blocks
+Also, my client now pulls the blockchain from the server every second. And it updates its blockchain
+to the server's if the client's blockchain is less than or equal to server's. The client can also add blocks
 through the UI, it's very rudimentary right now. Since I don't have a class for whatever data is being stored
 in my Block's. I still need to figure that out. I also need to figure out how mining will work.
 Right now the person who adds the block, also mines the block. I'm not sure whether I should give other clients
 the opportunity to mine blocks, but it'd take more work, so for now I'm going to leave it with the creator of the block.
 
 Thursday (11/5/20)
+Now when a client's blockchain is longer than the server's, the client sends it to the server and it gets updated.
+Now I'm running into an issue where the blockchain is too large to send through a single socket. After the 5th block.
+So, now I should add a delimiter to the end of all transmissions through the socket, so that the program knows when to
+stop listening for a message.
 
+Saturday (11/7/20)
+AFTER HOURS OF DEBUGGING, my blockchain program finally works again! I tried to add a delimiter to all of my messages
+sent between the client and the server, so that both the client and server know when to stop reading from the socket,
+but it opened up loads of issues. For example for one specific previous hash, a new line character magically pops
+somewhere in the middle of the hash. I still don't know what causes this, but my program knows that it can happen and
+deals with it when it does. Also, I had my client correctly reading through the socket up until my delimiter, but for
+the longest time, my server was closing the socket after it read 1024 bytes from the socket, and I did not notice it for
+ages. Now it works correctly which means that there is no limitation on the size of our blockchain anymore! The server
+can update the client, and the client can update the server! So, next thing to do for me is to spend a bit more time
+on fulfilling the requirements for this project in terms of UI, error handling, comments, and the features for modifying
+the blockchain.

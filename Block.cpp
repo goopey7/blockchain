@@ -11,7 +11,6 @@ Block::Block(std::string _data)
 {
 	data=_data;
 	timeStamp=generateTimeStamp();
-	std::cout << timeStamp <<std::endl;
 }
 
 Block::Block(uint64_t _index, std::string _data, std::string _prevHash, std::string _timeStamp, uint64_t _nonce,

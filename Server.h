@@ -15,13 +15,13 @@
 #include "Blockchain.h"
 
 #define PORT 9162
+#define DELIM "***********%%%%%%%%%%%^^^^^^^^^^^^^^^MSG_END^^^^^^^^^^^^^^^%%%%%%%%%%%***********"
 
 class Server
 {
 private:
 	Blockchain* chain=new Blockchain;
 	std::vector<std::thread*> threads;
-	void acceptClients();
 public:
 	Server();
 	void listenAndObeyClient();

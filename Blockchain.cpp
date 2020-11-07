@@ -61,27 +61,25 @@ std::string Blockchain::mineBlock(Block* block)
 
 void Blockchain::read(std::string fileName)
 {
-	try
+	std::vector<std::string>* blockchainFile = ReadAndWrite::readFile(fileName);
+	for(int i=0;i<blockchainFile->size();i+=9)
 	{
-		std::vector<std::string>* blockchainFile = ReadAndWrite::readFile(fileName);
-		for(int i=0;i<blockchainFile->size();i+=9)
+		if(blockchainFile->at(i)=="BLOCK")
 		{
-			if(blockchainFile->at(i)=="BLOCK")
+			uint64_t index = std::stoll(blockchainFile->at(i+2).substr(std::string("Index:").length()));
+			std::string data = blockchainFile->at(i+3).substr(std::string("Data:").length());
+			std::string prevHash = blockchainFile->at(i+4).substr(std::string("PreviousHash:").length());
+			if(prevHash.length()!=64&&prevHash!="0")
 			{
-				uint64_t index = std::stoll(blockchainFile->at(i+2).substr(std::string("Index:").length()));
-				std::string data = blockchainFile->at(i+3).substr(std::string("Data:").length());
-				std::string prevHash = blockchainFile->at(i+4).substr(std::string("PreviousHash:").length());
-				std::string timeStamp = blockchainFile->at(i+5).substr(std::string("TimeStamp:").length());
-				uint64_t nonce = std::stoll(blockchainFile->at(i+6).substr(std::string("Nonce:").length()));
-				int difficulty =
-						std::stoi(blockchainFile->at(i+7).substr(std::string("Difficulty:").length()));
-				chain->add(new Block(index,data,prevHash,timeStamp,nonce,difficulty));
+				prevHash+=blockchainFile->at(i+5);
+				i++;
 			}
+			std::string timeStamp = blockchainFile->at(i+5).substr(std::string("TimeStamp:").length());
+			uint64_t nonce = std::stoll(blockchainFile->at(i+6).substr(std::string("Nonce:").length()));
+			int difficulty =
+					std::stoi(blockchainFile->at(i+7).substr(std::string("Difficulty:").length()));
+			chain->add(new Block(index,data,prevHash,timeStamp,nonce,difficulty));
 		}
-	}
-	catch (...)
-	{
-		write(fileName);
 	}
 }
 
