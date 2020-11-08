@@ -175,6 +175,8 @@ void Server::start()
 Server::Server()
 {
 	chain->read("ServerBlockchain.txt");
+	if(!chain->validateChain())
+		chain->write("ServerBlockchain.txt");
 }
 
 void Server::displayHelpMenu()

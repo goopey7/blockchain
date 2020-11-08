@@ -3,8 +3,6 @@
 //
 
 //TODO Implement an inventory (which should work similar to a crypto wallet)
-//TODO When Mr. Polizano inevitably changes something in the text file, the server should just truncate everything
-// at and after the invalid block. Same with clients.
 //TODO the blockchain should store transactions not items. Some of those transactions would be rewarded through the game
 // if we get peer mining implemented, then they also get rewarded.
 //TODO make a generic item class
@@ -18,6 +16,8 @@ Client::Client()
 	pingMainServer();
 	chain=new Blockchain;
 	chain->read("ClientBlockchain.txt");
+	if(!chain->validateChain())
+		chain->write("ClientBlockchain.txt");
 	// grab difficulty from the server
 	grabDifficulty();
 }
@@ -152,7 +152,7 @@ void Client::grabChain(std::string ip, int port)
 					chainSize = chain->size();
 				}
 				else chainSize=0;
-				if(serverSize>=chainSize)
+				if(serverSize>=chainSize&&serverChain->validateChain())
 				{
 					if(chain!=nullptr)
 					{
@@ -246,7 +246,15 @@ void Client::openMainMenu()
 			chain->addBlockToChain(input);
 			sendChain(OFFICIAL_IP,PORT);
 		}
-		if(input.empty()) // Enter to refresh menu
+		else if(input=="3")
+		{
+			std::cout << "Enter index of block to delete: ";
+			ReadAndWrite::getInputAsString(input);
+			uint64_t indexToRemove = std::stoll(input);
+			chain->deleteBlockFromChain(indexToRemove);
+			chain->write("ClientBlockchain.txt");
+		}
+		else if(input.empty()) // Enter to refresh menu
 		{
 			pingMainServer();
 		}

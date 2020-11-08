@@ -30,6 +30,8 @@ public:
 	std::vector<std::string>* write(std::string fileName);
 	void setDifficulty(short _difficulty){currentDifficulty=_difficulty;}
 	short getDifficulty(){return currentDifficulty;}
+
+	void deleteBlockFromChain(uint64_t index);
 };
 
 #endif //BLOCKCHAIN_BLOCKCHAIN_H

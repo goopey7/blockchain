@@ -189,7 +189,7 @@ T* LLNode<T>::remove(uint64_t index)
 		next=nextNode;
 		return dat;
 	}
-	else return remove(index-1);
+	else return next->remove(index-1);
 }
 
 #endif //BLOCKCHAIN_LLNODE_H

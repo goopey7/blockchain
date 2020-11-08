@@ -10,7 +10,12 @@ bool Blockchain::validateChain()
 	for(int i=1;i<chain->size();i++)
 	{
 		if(chain->at(i-1)->generateHash()!=chain->at(i)->getPrevHash())
+		{
+			int diffBetweenSizeAndIndex = chain->size()-i;
+			for(int j=0;j<diffBetweenSizeAndIndex;j++)
+				chain->remove(i);
 			return false;
+		}
 	}
 	return true;
 }
@@ -43,14 +48,28 @@ void Blockchain::addBlockToChain(Block* block)
 	chain->add(block);
 }
 
+void Blockchain::deleteBlockFromChain(uint64_t index)
+{
+	chain->remove(index);
+	for(int i=index;i<chain->size();i++)
+	{
+		uint64_t newIndex = chain->at(i)->getIndex()-1;
+		chain->at(i)->setIndex(newIndex);
+		if(newIndex==0)
+			chain->at(i)->setPrevHash("0");
+		else chain->at(i)->setPrevHash(chain->at(newIndex-1)->generateHash());
+		mineBlock(chain->at(i));
+	}
+}
+
 //TODO make multi-threaded!
 std::string Blockchain::mineBlock(Block* block)
 {
 	std::string hash="";
 	uint64_t i=0;
 	std::string zeros = "";
-	for(int j=0;j<currentDifficulty;j++)zeros+="0";
-	while(hash.substr(0,currentDifficulty)!=zeros)
+	for(int j=0;j<block->getDifficulty();j++)zeros+="0";
+	while(hash.substr(0,block->getDifficulty())!=zeros)
 	{
 		block->setNonce(i);
 		hash = block->generateHash();

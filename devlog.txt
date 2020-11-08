@@ -130,3 +130,8 @@ features for modifying the blockchain.
 
 https://github.com/goopey7/blockchain/commit/e31070a5175196dd209ff7645dc3bfc4487b5aca
 Now the client grabs difficulty from the server.
+
+If a server/client's blockchain is invalid, the stored blockchain gets truncated to the last valid block.
+Hopefully there is a connected client that'll be able to quickly provide the server with the correct blockchain.
+
+Now client's can delete block's through the UI. After deleting a block, everything after the block gets re-mined.
