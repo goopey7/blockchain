@@ -128,3 +128,5 @@ anymore! The server can update the client, and the client can update the server!
 a bit more time on fulfilling the requirements for this project in terms of UI, error handling, comments, and the
 features for modifying the blockchain.
 
+https://github.com/goopey7/blockchain/commit/e31070a5175196dd209ff7645dc3bfc4487b5aca
+Now the client grabs difficulty from the server.
