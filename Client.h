@@ -41,6 +41,8 @@ public:
 	bool isOfficalServerOnline(){return bOfficialServerIsOnline;}
 	void openMainMenu();
 	void grabChain(std::string ip, int port);
+
+	void grabDifficulty();
 };
 
 

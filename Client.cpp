@@ -2,6 +2,14 @@
 // Created by sam on 20/10/2020.
 //
 
+//TODO Implement an inventory (which should work similar to a crypto wallet)
+//TODO When Mr. Polizano inevitably changes something in the text file, the server should just truncate everything
+// at and after the invalid block. Same with clients.
+//TODO the blockchain should store transactions not items. Some of those transactions would be rewarded through the game
+// if we get peer mining implemented, then they also get rewarded.
+//TODO make a generic item class
+//TODO when an item's property changes, the owner should make a transaction to themselves, so that the change is updated
+// on the blockchain.
 
 #include "Client.h"
 
@@ -10,6 +18,27 @@ Client::Client()
 	pingMainServer();
 	chain=new Blockchain;
 	chain->read("ClientBlockchain.txt");
+	// grab difficulty from the server
+	grabDifficulty();
+}
+
+void Client::grabDifficulty()
+{
+	std::string serverChainStr;
+	while(serverChainStr.find("DIFFICULTY:")==std::string::npos)
+	{
+		serverChainStr = sendMessageToServer("SEND_DIFFICULTY", OFFICIAL_IP, PORT, true);
+		// we have to wait until the server is ready to receive another message otherwise
+		// our request for the blockchain will be dropped.
+		// https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+	if(serverChainStr.find("DIFFICULTY:")!=std::string::npos)
+	{
+		short diffToSet=std::stoi(serverChainStr.substr(
+				std::string("DIFFICULTY:").length()));
+		chain->setDifficulty(diffToSet);
+	}
 }
 
 Client::~Client()
@@ -73,69 +102,80 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 
 void Client::grabChain(std::string ip, int port)
 {
+	uint64_t numPings=0;
 	while(!bShuttingDown)
 	{
-		std::string serverChainStr;
-		while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
+		if(numPings%2==0)
 		{
-			serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
-			// we have to wait until the server is ready to receive another message otherwise
-			// our request for the blockchain will be dropped.
-			// https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		}
-
-		if(serverChainStr=="EMPTY_CHAIN")
-		{
-			//TODO Send our chain to be distributed by the server
-			if(chain!=nullptr&&chain->size()>0)
+			std::string serverChainStr;
+			while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
 			{
-				sendChain(ip,port);
+				serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
+				// we have to wait until the server is ready to receive another message otherwise
+				// our request for the blockchain will be dropped.
+				// https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
-		}
-		else if(serverChainStr.find("BLOCKCHAIN_INCOMING:") != std::string::npos)
-		{
-			std::vector<std::string> readChain;
-			serverChainStr = serverChainStr.substr(std::string("BLOCKCHAIN_INCOMING:").length());
-			std::string lineToAdd;
-			int i=0;
-			while(i<serverChainStr.length())
+			if(serverChainStr=="EMPTY_CHAIN")
 			{
-				if(serverChainStr.c_str()[i]=='\n')
+				if(chain!=nullptr&&chain->size()>0)
 				{
-					readChain.push_back(lineToAdd);
-					lineToAdd="";
+					sendChain(ip,port);
+				}
+			}
+			else if(serverChainStr.find("BLOCKCHAIN_INCOMING:") != std::string::npos)
+			{
+				std::vector<std::string> readChain;
+				serverChainStr = serverChainStr.substr(std::string("BLOCKCHAIN_INCOMING:").length());
+				std::string lineToAdd;
+				int i=0;
+				while(i<serverChainStr.length())
+				{
+					if(serverChainStr.c_str()[i]=='\n')
+					{
+						readChain.push_back(lineToAdd);
+						lineToAdd="";
+					}
+					else
+						lineToAdd+=serverChainStr.c_str()[i];
+					i++;
+				}
+				ReadAndWrite::writeFile(&readChain,"Client'sCopyOfServerBlockchain.txt");
+				if(serverChain==nullptr)serverChain->clear();
+				serverChain = new Blockchain;
+				serverChain->read("Client'sCopyOfServerBlockchain.txt");
+				uint64_t  serverSize=serverChain->size();
+				uint64_t  chainSize;
+				if(chain!= nullptr)
+				{
+					serverChain->setDifficulty(chain->getDifficulty());
+					chainSize = chain->size();
+				}
+				else chainSize=0;
+				if(serverSize>=chainSize)
+				{
+					if(chain!=nullptr)
+					{
+						delete chain;
+					}
+					chain = serverChain;
+					chain->write("ClientBlockchain.txt");
 				}
 				else
-					lineToAdd+=serverChainStr.c_str()[i];
-				i++;
-			}
-			ReadAndWrite::writeFile(&readChain,"Client'sCopyOfServerBlockchain.txt");
-			if(serverChain==nullptr)serverChain->clear();
-			serverChain = new Blockchain;
-			serverChain->read("Client'sCopyOfServerBlockchain.txt");
-			uint64_t  serverSize=serverChain->size();
-			uint64_t  chainSize;
-			if(chain!= nullptr)
-				chainSize=chain->size();
-			else chainSize=0;
-			if(serverSize>=chainSize)
-			{
-				if(chain!=nullptr)
 				{
-					delete chain;
+					delete serverChain;
+					//TODO send our chain to be verified by other clients
+					sendChain(ip,port);
 				}
-				chain = serverChain;
-				chain->write("ClientBlockchain.txt");
 			}
-			else
-			{
-				delete serverChain;
-				//TODO send our chain to be verified by other clients
-				sendChain(ip,port);
-			}
+
 		}
-		sleep(1);
+		else
+		{
+			grabDifficulty();
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		numPings++;
 	}
 }
 
@@ -182,8 +222,11 @@ void Client::openMainMenu()
 		CLEAR_SCREEN
 		input="";
 		std::cout << "Main Server Status: " << (bOfficialServerIsOnline ? "Online" : "Offline") << std::endl;
-		std::cout << "1: Create New Block\n";
-		std::cout << "2: Explore Chain\n";
+		std::cout << "Current Difficulty: " << chain->getDifficulty() << std::endl;
+		std::cout << "1: Explore Chain\n";
+		std::cout << "2: Create Block\n";
+		std::cout << "3: Delete Block\n";
+		std::cout << "4: Access wallet\n";
 		std::cout << "Enter: Refresh\n";
 		ReadAndWrite::getInputAsString(input);
 		try
@@ -195,7 +238,7 @@ void Client::openMainMenu()
 		{
 			bBadInput=true;
 		}
-		if(input=="1")
+		if(input=="2")
 		{
 			std::cout << "Enter data: ";
 			std::string input;

@@ -75,6 +75,7 @@ void Blockchain::read(std::string fileName)
 				i++;
 			}
 			std::string timeStamp = blockchainFile->at(i+5).substr(std::string("TimeStamp:").length());
+			if(blockchainFile->at(i+6).empty())i++;
 			uint64_t nonce = std::stoll(blockchainFile->at(i+6).substr(std::string("Nonce:").length()));
 			int difficulty =
 					std::stoi(blockchainFile->at(i+7).substr(std::string("Difficulty:").length()));

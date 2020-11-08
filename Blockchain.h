@@ -12,7 +12,7 @@
 class Blockchain
 {
 private:
-	short currentDifficulty=1;
+	short currentDifficulty=2;
 	LLNode<Block>* chain=new LLNode<Block>;
 	std::string mineBlock(Block* block);
 public:
@@ -28,6 +28,8 @@ public:
 	void clear(){chain->clear();}
 	void read(std::string fileName);
 	std::vector<std::string>* write(std::string fileName);
+	void setDifficulty(short _difficulty){currentDifficulty=_difficulty;}
+	short getDifficulty(){return currentDifficulty;}
 };
 
 #endif //BLOCKCHAIN_BLOCKCHAIN_H

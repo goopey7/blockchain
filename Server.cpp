@@ -63,7 +63,13 @@ void Server::listenAndObeyClient()
 		close(server_fd);
 		bufferStr=bufferStr.substr(0,
 							 bufferStr.find(DELIM));
-		if(bufferStr=="SEND_CHAIN")
+		if (bufferStr=="SEND_DIFFICULTY")
+		{
+			std::string diffStr="DIFFICULTY:"+std::to_string(chain->getDifficulty())+DELIM;
+			send(new_socket,diffStr.c_str(),diffStr.length(),0);
+			std::cout << "Difficulty sent to " << inet_ntoa(address.sin_addr) << std::endl;
+		}
+		else if(bufferStr=="SEND_CHAIN")
 		{
 			std::vector<std::string>* chainToSend=chain->write("ServerBlockchain.txt");
 			if(chainToSend== nullptr)
@@ -145,9 +151,21 @@ void Server::start()
 	// distribute blockchain to those who don't already have one
 	// 
 	std::string input;
-	while(input!="s")
+	while(input!="s"&&input!="shutdown")
 	{
 		ReadAndWrite::getInputAsString(input);
+		if(input=="h"||input=="help"||input=="?")
+			displayHelpMenu();
+		else if(input.substr(0,14)=="difficulty set")
+		{
+			short cmdDifficulty = std::stoi(input.substr(15));
+			chain->setDifficulty(cmdDifficulty);
+
+		}
+		else if(input!="s"&&input!="shutdown")
+		{
+			std::cout << "Unknown Command: Use '?' to view the help screen\n";
+		}
 	}
 	tAcceptClients.detach();
 	for(int i=0;i<threads.size();i++)
@@ -157,4 +175,14 @@ void Server::start()
 Server::Server()
 {
 	chain->read("ServerBlockchain.txt");
+}
+
+void Server::displayHelpMenu()
+{
+	std::cout << "**************************************** Help ****************************************\n";
+	std::cout << "command                                       explanation\n";
+	std::cout << "help, h, or ?                                 displays this help screen\n";
+	std::cout << "shutdown or s                                 shutdown server\n";
+	std::cout << "difficulty set NUMBER                         set the difficulty to specified value\n";
+	std::cout << "**************************************************************************************\n";
 }

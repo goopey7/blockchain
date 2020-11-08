@@ -27,6 +27,8 @@ public:
 	void listenAndObeyClient();
 	void pingConnectedClients();
 	void start();
+
+	void displayHelpMenu();
 };
 
 
