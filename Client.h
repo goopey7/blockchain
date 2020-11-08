@@ -12,6 +12,8 @@
 #include <arpa/inet.h>
 #include <string>
 #include "Blockchain.h"
+#include "Inventory.h"
+
 #define OFFICIAL_IP "192.168.103.187"
 //#define OFFICIAL_IP "74.72.186.84"
 //#define OFFICIAL_IP "_official._tcp.blockchain.samcollier.tech"
@@ -29,6 +31,7 @@ private:
 	bool bOfficialServerIsOnline=false;
 	Blockchain* chain= nullptr;
 	Blockchain* serverChain;
+	Inventory* inventory;
 	void waitFiveSeconds();
 	void pingMainServer();
 	std::string sendMessageToServer(std::string message,std::string ip,int port,bool bExpectResponse=false);

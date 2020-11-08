@@ -18,8 +18,6 @@ Client::Client()
 	chain->read("ClientBlockchain.txt");
 	if(!chain->validateChain())
 		chain->write("ClientBlockchain.txt");
-	// grab difficulty from the server
-	grabDifficulty();
 }
 
 void Client::grabDifficulty()
@@ -43,6 +41,7 @@ void Client::grabDifficulty()
 
 Client::~Client()
 {
+
 }
 
 void Client::pingMainServer()
@@ -227,17 +226,9 @@ void Client::openMainMenu()
 		std::cout << "2: Create Block\n";
 		std::cout << "3: Delete Block\n";
 		std::cout << "4: Access wallet\n";
+		std::cout << "5: Generate wallet\n";
 		std::cout << "Enter: Refresh\n";
 		ReadAndWrite::getInputAsString(input);
-		try
-		{
-			int isNumInput = std::stoi(input);
-			bBadInput=false;
-		}
-		catch (...)
-		{
-			bBadInput=true;
-		}
 		if(input=="2")
 		{
 			std::cout << "Enter data: ";
@@ -254,9 +245,47 @@ void Client::openMainMenu()
 			chain->deleteBlockFromChain(indexToRemove);
 			chain->write("ClientBlockchain.txt");
 		}
+		else if(input=="4") //access an inventory
+		{
+			input="";
+			do
+			{
+				std::cout << "Enter 'e' to exit\n";
+				std::cout << "Enter your private key: ";
+				ReadAndWrite::getInputAsString(input);
+			}
+			while(input.length()!=64&&input!="e"&&input!="E");
+			if(input!="e"&&input!="E")
+			{
+				inventory=new Inventory(input,chain);
+				goto inventoryMenu;
+			}
+			else input="";
+		}
+		else if(input=="5")
+		{
+			inventory=new Inventory(chain);
+			goto inventoryMenu;
+		}
 		else if(input.empty()) // Enter to refresh menu
 		{
 			pingMainServer();
+		}
+		if(false) // only way in is through goto
+		{
+			inventoryMenu:
+			input="";
+			do
+			{
+				CLEAR_SCREEN
+				std::cout << "Main Server Status: " << (bOfficialServerIsOnline ? "Online" : "Offline") << std::endl;
+				std::cout << "Current Difficulty: " << chain->getDifficulty() << std::endl;
+				std::cout << "Inventory Address: " << inventory->getPublicKey() << std::endl;
+				ReadAndWrite::getInputAsString(input);
+			}
+			while(input!="e"&&input!="E");
+			delete inventory;
+			goto menuAfterLoggingIn;
 		}
 	}
 	while(input!="e");

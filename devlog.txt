@@ -135,3 +135,8 @@ If a server/client's blockchain is invalid, the stored blockchain gets truncated
 Hopefully there is a connected client that'll be able to quickly provide the server with the correct blockchain.
 
 Now client's can delete block's through the UI. After deleting a block, everything after the block gets re-mined.
+
+Sunday (11/8/20)
+(2:30) After spending a fair chunk of time learning about how crypto-currencies such as bitcoin generate public and
+private keys for their wallets, I ended up taking some C code off of the internet, and my project now requires the
+OpenSSL library.
