@@ -58,7 +58,7 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 	message+=DELIM;
 	int sock = 0, valread;
 	struct sockaddr_in serv_addr;
-	char buffer[8192] = {0};
+	char buffer[1000000] = {0};
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		printf("\n Socket creation error \n");
@@ -80,7 +80,7 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 		bOfficialServerIsOnline = false;
 		return "";
 	}
-	else if(bExpectResponse)
+	if(bExpectResponse)
 	{
 		send(sock , message.c_str() , message.length() , 0 );
 		//if for whatever reason we don't hear back from the server, we don't want both the server and the client
@@ -88,12 +88,12 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 		std::string bufferStr;
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
-			valread = read(sock,buffer,8192);
-			//std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-			bufferStr += std::string(buffer);
+			valread = read(sock,buffer,1000000);
+			bufferStr+=std::string(buffer);
 		}
 		close(sock);
-		int a =1;
+		//grabResponse(bufferStr,port,ip);
+		int a=2;
 		return bufferStr.substr(0,bufferStr.find(DELIM));
 	}
 	else send(sock , message.c_str() , message.length() , 0 );
@@ -180,6 +180,7 @@ void Client::grabChain(std::string ip, int port)
 	}
 }
 
+
 void Client::openMainMenu()
 {
 	bool bBadInput=false;
@@ -205,6 +206,9 @@ void Client::openMainMenu()
 		if(input=="1")
 		{
 			sendMessageToServer("Logging in...",OFFICIAL_IP,PORT);
+			// grab chain every second
+			bShuttingDown=false;
+			tGrabChain=new std::thread(&Client::grabChain,this,OFFICIAL_IP,PORT);
 			goto menuAfterLoggingIn;
 		}
 		if(input.empty()) // Enter to refresh menu
@@ -215,9 +219,6 @@ void Client::openMainMenu()
 	while(input!="e");
 	if(input=="e")return;
 	menuAfterLoggingIn:
-	// grab chain every second
-	bShuttingDown=false;
-	tGrabChain=new std::thread(&Client::grabChain,this,OFFICIAL_IP,PORT);
 	do
 	{
 		CLEAR_SCREEN

@@ -16,7 +16,7 @@ void Server::listenAndObeyClient()
 		std::string bufferStr="";
 		int opt = 1;
 		int addrlen = sizeof(address);
-		char buffer[8192] = {0};
+		char buffer[1000000] = {0};
 		std::string hello = "Hello from server";
 
 		// Creating socket file descriptor
@@ -57,7 +57,7 @@ void Server::listenAndObeyClient()
 		}
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
-			valread = read(new_socket, buffer, 8192);
+			valread = read(new_socket, buffer, 1000000);
 			bufferStr+=buffer;
 		}
 		close(server_fd);
@@ -85,6 +85,22 @@ void Server::listenAndObeyClient()
 				chainStr+='\n';
 			}
 			chainStr+=DELIM;
+			/*std::vector<std::string> buffersToSend;
+			std::string buffer;
+			for(int i=0;i<chainStr.length();i++)
+			{
+				if((i+1)%1000000==0&&i!=0)
+				{
+					buffersToSend.push_back(buffer);
+					buffer="";
+				}
+				buffer+=chainStr[i];
+			}
+			for(int i=0;i<buffersToSend.size();i++)
+			{
+				send(new_socket,buffersToSend[i].c_str(),buffersToSend[i].length(),0);
+				//std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			}*/
 			send(new_socket,chainStr.c_str(),chainStr.length(),0);
 			std::cout << "Blockchain sent to " << inet_ntoa(address.sin_addr) << std::endl;
 			delete chainToSend;
@@ -147,6 +163,7 @@ void Server::listenAndObeyClient()
 			send(new_socket,unknown.c_str(),unknown.length(),0);
 		}
 		close(server_fd);
+		close(new_socket);
 	}
 }
 
