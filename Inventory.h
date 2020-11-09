@@ -21,7 +21,7 @@ class Inventory
 {
 private:
 	std::string publicKey;
-	LLNode<Item*> items;
+	LLNode<Item>* items=new LLNode<Item>;
 	Blockchain* chain;
 	// calculates and returns the public key associated with the given private key
 	// - input private key and output public key are in hexadecimal
@@ -45,6 +45,9 @@ public:
 	// use this constructor to generate a new wallet
 	Inventory(Blockchain* _chain);
 	std::string getPublicKey(){return publicKey;}
+	void updateInventory(Blockchain* _chain);
+	Item* at(int index){return items->at(index);}
+	int size();
 };
 
 

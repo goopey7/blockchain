@@ -119,4 +119,61 @@ Inventory::Inventory(Blockchain* _chain)
 {
 	chain=_chain;
 	publicKey=generatePublicKey(generatePrivateKey());
+	items->set(0, nullptr);
+}
+
+void Inventory::updateInventory(Blockchain* _chain)
+{
+	chain=_chain;
+	items->clear();
+	items=new LLNode<Item>;
+	for(int i=0;i<chain->size();i++)
+	{
+		std::string data=chain->at(i)->getData();
+		if(data.find(publicKey)!=std::string::npos)
+		{
+			std::vector<std::string> itemParseHelper;
+			std::string line;
+			for(int j=1;j<data.length();j++)
+			{
+				if(data[j]!='\t')
+				{
+					if(data[j]!='\n')
+						line+=data[j];
+					else
+					{
+						itemParseHelper.push_back(line);
+						line="";
+					}
+				}
+			}
+			if(data.find("TO "+publicKey)!=std::string::npos)
+			{
+				Item* newItem = new Item(itemParseHelper[2].substr(3),itemParseHelper[3].substr(5));
+				items->add(newItem);
+			}
+			else if(data.find("FROM "+publicKey)!=std::string::npos)
+			{
+				Item itemToRemove(itemParseHelper[2].substr(3),itemParseHelper[3].substr(5));
+				for(int j=0;j<items->size();j++)
+				{
+					if(items->at(j)->getItemID()==itemToRemove.getItemID()&&
+					   items->at(j)->getItemName()==itemToRemove.getItemName())
+					{
+						items->remove(j);
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+int Inventory::size()
+{
+	if(items->at(0)==nullptr&&items->getNextNode()== nullptr&&items->getData()== nullptr)
+	{
+		return 0;
+	}
+	else return items->size();
 }

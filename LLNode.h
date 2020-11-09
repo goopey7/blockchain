@@ -180,13 +180,20 @@ T* LLNode<T>::remove(uint64_t index)
 	}
 	// if we want to delete the first element, instead we'll just copy the next element to it and then link to the node
 	// two intervals away
-	else if(index==0)
+	else if(index==0&&next!= nullptr)
 	{
 		T* dat=data;
 		data=next->getData();
 		LLNode<T>* nextNode=next->getNextNode();
 		delete next;
 		next=nextNode;
+		return dat;
+	}
+	// if there is only one element in the list we are deleting
+	else if(index==0&&next==nullptr)
+	{
+		T* dat=data;
+		data=nullptr;
 		return dat;
 	}
 	else return next->remove(index-1);

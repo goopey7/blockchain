@@ -278,10 +278,50 @@ void Client::openMainMenu()
 			do
 			{
 				CLEAR_SCREEN
+				inventory->updateInventory(chain);
 				std::cout << "Main Server Status: " << (bOfficialServerIsOnline ? "Online" : "Offline") << std::endl;
 				std::cout << "Current Difficulty: " << chain->getDifficulty() << std::endl;
 				std::cout << "Inventory Address: " << inventory->getPublicKey() << std::endl;
+				std::cout << "Items: ";
+				int a =inventory->size();
+				for(int i=0;i<inventory->size();i++)
+				{
+					std::cout << i+1 << ") " << inventory->at(i)->getItemName() << " ";
+				}
+				std::cout << std::endl;
+				std::cout << "1: Attribute an item from the game\n";
+				std::cout << "2: Make a transaction\n";
 				ReadAndWrite::getInputAsString(input);
+				if(input=="1")
+				{
+					std::cout << "Enter item ID: ";
+					std::string itemID;
+					ReadAndWrite::getInputAsString(itemID);
+					std::cout << "Enter a name for this item: ";
+					std::string itemName;
+					ReadAndWrite::getInputAsString(itemName);
+					std::string data = "\n\tITEM\n\t{\n\tID:"+itemID+"\n\tNAME:"+itemName+"\n\t}\n\tFROM GAME\n\tTO "+
+									  inventory->getPublicKey();
+					chain->addBlockToChain(data);
+					chain->write("ClientBlockchain.txt");
+					inventory->updateInventory(chain);
+				}
+				else if(input=="2")
+				{
+					//TODO needs to be error checked
+					std::cout << "Select the item from your inventory using it's corresponding number listed above: ";
+					std::string input;
+					ReadAndWrite::getInputAsString(input);
+					int indexOfChoice = std::stoi(input);
+					indexOfChoice--;
+					std::cout << "Enter the address of the recipient: ";
+					ReadAndWrite::getInputAsString(input);
+					chain->addBlockToChain("\n\tITEM\n\t{\n\tID:"+inventory->at(indexOfChoice)->getItemID()+
+					"\n\tNAME:"+inventory->at(indexOfChoice)->getItemName()+"\n\t}\n\tFROM "+
+					inventory->getPublicKey()+"\n\tTO "+input);
+					chain->write("ClientBlockchain.txt");
+					inventory->updateInventory(chain);
+				}
 			}
 			while(input!="e"&&input!="E");
 			delete inventory;

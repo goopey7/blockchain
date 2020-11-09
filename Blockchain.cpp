@@ -29,7 +29,7 @@ void Blockchain::addBlockToChain(std::string data)
 	// due to the nature of my linked list, it will always have at least one element.
 	// so to check if we need to make a genesis block we need to check to see if the first element contains
 	// a nullptr. Our chain variable is the first element in the list, so I can call getData() directly from it.
-	if(chain->size()==1&&chain->getData()==nullptr)
+	if(chain->getNextNode()==nullptr&&chain->getData()==nullptr)
 	{
 		blockToAdd->setPrevHash("0"); // this is the genesis block
 		blockToAdd->setIndex(0);
@@ -86,8 +86,24 @@ void Blockchain::read(std::string fileName)
 		if(blockchainFile->at(i)=="BLOCK")
 		{
 			uint64_t index = std::stoll(blockchainFile->at(i+2).substr(std::string("Index:").length()));
-			std::string data = blockchainFile->at(i+3).substr(std::string("Data:").length());
-			std::string prevHash = blockchainFile->at(i+4).substr(std::string("PreviousHash:").length());
+			std::string data="\n";
+			for(int currInd=i+3;currInd<i+10;currInd++)
+			{
+				data += blockchainFile->at(currInd+1);
+				data+='\n';
+			}
+			data=data.substr(0,data.length()-1);
+			i+=7;
+			std::string prevHash;
+			try
+			{
+				prevHash = blockchainFile->at(i+4).substr(std::string("PreviousHash:").length());
+			}
+			catch (...)
+			{
+				prevHash = blockchainFile->at(i+5).substr(blockchainFile->at(i+5).find(':')+1);
+				i++;
+			}
 			if(prevHash.length()!=64&&prevHash!="0")
 			{
 				prevHash+=blockchainFile->at(i+5);
@@ -115,6 +131,7 @@ std::vector<std::string>* Blockchain::write(std::string fileName)
 			outVector->push_back("BLOCK");
 			outVector->push_back("{");
 			outVector->push_back("Index:"+std::to_string(blockToWrite->getIndex()));
+			std::string s=blockToWrite->getData();
 			outVector->push_back("Data:"+blockToWrite->getData());
 			outVector->push_back("PreviousHash:"+blockToWrite->getPrevHash());
 			outVector->push_back("TimeStamp:"+blockToWrite->getTimeStamp());
