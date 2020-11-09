@@ -40,6 +40,7 @@ void Blockchain::addBlockToChain(std::string data)
 		blockToAdd->setIndex(chain->size());
 	}
 	mineBlock(blockToAdd);
+	while(chain==nullptr){}
 	chain->add(blockToAdd);
 }
 
@@ -111,7 +112,17 @@ void Blockchain::read(std::string fileName)
 			}
 			std::string timeStamp = blockchainFile->at(i+5).substr(std::string("TimeStamp:").length());
 			if(blockchainFile->at(i+6).empty())i++;
-			uint64_t nonce = std::stoll(blockchainFile->at(i+6).substr(std::string("Nonce:").length()));
+			uint64_t nonce;
+			try
+			{
+				nonce = std::stoll(blockchainFile->at(i+6).substr(std::string("Nonce:").length()));
+			}
+			catch(...)
+			{
+				timeStamp+=blockchainFile->at(i+6);
+				i++;
+				nonce = std::stoll(blockchainFile->at(i+6).substr(std::string("Nonce:").length()));
+			}
 			int difficulty =
 					std::stoi(blockchainFile->at(i+7).substr(std::string("Difficulty:").length()));
 			chain->add(new Block(index,data,prevHash,timeStamp,nonce,difficulty));

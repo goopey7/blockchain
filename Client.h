@@ -38,6 +38,7 @@ private:
 	void sendChain(std::string ip, int port);
 	std::thread* tGrabChain;
 	bool bShuttingDown=false;
+	bool bPause=false;
 public:
 	Client();
 	~Client();

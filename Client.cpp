@@ -58,7 +58,7 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 	message+=DELIM;
 	int sock = 0, valread;
 	struct sockaddr_in serv_addr;
-	char buffer[1024] = {0};
+	char buffer[8192] = {0};
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		printf("\n Socket creation error \n");
@@ -88,11 +88,12 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 		std::string bufferStr;
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
-			valread = read(sock,buffer,1024);
+			valread = read(sock,buffer,8192);
 			//std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 			bufferStr += std::string(buffer);
 		}
 		close(sock);
+		int a =1;
 		return bufferStr.substr(0,bufferStr.find(DELIM));
 	}
 	else send(sock , message.c_str() , message.length() , 0 );
@@ -104,7 +105,8 @@ void Client::grabChain(std::string ip, int port)
 	uint64_t numPings=0;
 	while(!bShuttingDown)
 	{
-		if(numPings%2==0)
+		if(bPause){}
+		else if(numPings%2==0)
 		{
 			std::string serverChainStr;
 			while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
@@ -294,6 +296,7 @@ void Client::openMainMenu()
 				ReadAndWrite::getInputAsString(input);
 				if(input=="1")
 				{
+					bPause=true;
 					std::cout << "Enter item ID: ";
 					std::string itemID;
 					ReadAndWrite::getInputAsString(itemID);
@@ -305,9 +308,11 @@ void Client::openMainMenu()
 					chain->addBlockToChain(data);
 					chain->write("ClientBlockchain.txt");
 					inventory->updateInventory(chain);
+					bPause=false;
 				}
 				else if(input=="2")
 				{
+					bPause=true;
 					//TODO needs to be error checked
 					std::cout << "Select the item from your inventory using it's corresponding number listed above: ";
 					std::string input;
@@ -316,11 +321,11 @@ void Client::openMainMenu()
 					indexOfChoice--;
 					std::cout << "Enter the address of the recipient: ";
 					ReadAndWrite::getInputAsString(input);
-					chain->addBlockToChain("\n\tITEM\n\t{\n\tID:"+inventory->at(indexOfChoice)->getItemID()+
-					"\n\tNAME:"+inventory->at(indexOfChoice)->getItemName()+"\n\t}\n\tFROM "+
+					chain->addBlockToChain(inventory->at(indexOfChoice)->toString()+"\n\tFROM "+
 					inventory->getPublicKey()+"\n\tTO "+input);
 					chain->write("ClientBlockchain.txt");
 					inventory->updateInventory(chain);
+					bPause=false;
 				}
 			}
 			while(input!="e"&&input!="E");

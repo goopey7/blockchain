@@ -16,7 +16,7 @@ void Server::listenAndObeyClient()
 		std::string bufferStr="";
 		int opt = 1;
 		int addrlen = sizeof(address);
-		char buffer[1024] = {0};
+		char buffer[8192] = {0};
 		std::string hello = "Hello from server";
 
 		// Creating socket file descriptor
@@ -57,7 +57,7 @@ void Server::listenAndObeyClient()
 		}
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
-			valread = read(new_socket, buffer, 1024);
+			valread = read(new_socket, buffer, 8192);
 			bufferStr+=buffer;
 		}
 		close(server_fd);
@@ -74,7 +74,8 @@ void Server::listenAndObeyClient()
 			std::vector<std::string>* chainToSend=chain->write("ServerBlockchain.txt");
 			if(chainToSend== nullptr)
 			{
-				send(new_socket,"EMPTY_CHAIN",11,0);
+				std::string empty=std::string("EMPTY_CHAIN"+std::string(DELIM));
+				send(new_socket,empty.c_str(),empty.length(),0);
 				break;
 			}
 			std::string chainStr="BLOCKCHAIN_INCOMING:";
@@ -110,12 +111,16 @@ void Server::listenAndObeyClient()
 					lineToAdd+=clientChainStr.c_str()[i];
 				i++;
 			}
+			if(clientChain.at(clientChain.size()-1)!="}")
+				clientChain.push_back("}");
 			ReadAndWrite::writeFile(&clientChain,"Server'sCopyOfAClient.txt");
 			Blockchain* incomingClientChain=new Blockchain;
 			incomingClientChain->read("Server'sCopyOfAClient.txt");
 
 			//TODO This won't work when peers are validating a block.
 			// How do we handle when the server's block is deemed invalid?
+			bool b = incomingClientChain->validateChain();
+			bool c = incomingClientChain->length()>chain->length();
 			if(incomingClientChain->length()>chain->length() && incomingClientChain->validateChain())
 			{
 				delete chain;
@@ -133,8 +138,8 @@ void Server::listenAndObeyClient()
 			std::cout << inet_ntoa(address.sin_addr)<<" logged in\n";
 			//numClientsConnected++;
 			//connectedClients.push_back(inet_ntoa(address.sin_addr));
-			std::thread* t=new std::thread(&Server::listenAndObeyClient,this);
-			threads.push_back(t);
+			//std::thread* t=new std::thread(&Server::listenAndObeyClient,this);
+			//threads.push_back(t);
 		}
 		else
 		{
