@@ -22,6 +22,7 @@ class Server
 private:
 	Blockchain* chain=new Blockchain;
 	std::vector<std::thread*> threads;
+	bool bVerbose=false;
 public:
 	Server();
 	void listenAndObeyClient();

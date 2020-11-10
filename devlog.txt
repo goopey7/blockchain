@@ -140,3 +140,23 @@ Sunday (11/8/20)
 (2:30) After spending a fair chunk of time learning about how crypto-currencies such as bitcoin generate public and
 private keys for their wallets, I ended up taking some C code off of the internet, and my project now requires the
 OpenSSL library.
+
+Implemented the inventory class and the item class. To generate the private key, the program generates entropy by adding
+the nano seconds since epoch, a "randomly" generated number, and the real user ID of the calling process. That number is
+then hashed using SHA256. And, that's the private key. We get the public key using ECDSA algorithm used for bitcoin.
+
+I'm still suffering from a really annoying bug which is that weird stuff happens when I have to read from a socket again
+because the message is larger than the size of the buffer. A '\n' character will just appear out of nowhere and then
+my client will crash because it can't parse it correctly.
+
+Monday (11/9/20)
+
+I FINALLY SQUASHED THE BUG. This means that I can get rid of so much code in the parser that anticipated this weird
+trickery! After a lot of debugging, I decided to ask the question on stackoverflow, and the solution to my problem
+was answered in about two minutes!
+https://stackoverflow.com/questions/64761140/read-from-a-socket-without-knowing-the-size-of-the-buffer/64761196
+So now it doesn't matter how large the blockchain is! Well.... until we hit the max limit of our unsigned long long.
+But, I'm ok with that. I never thought I'd fix it!
+I've also added the current working directory as another thing that determines the private key.
+
+So now I'm going to try and fulfill some of the requirements in the google doc and add comments

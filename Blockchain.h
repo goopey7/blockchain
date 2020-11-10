@@ -32,6 +32,8 @@ public:
 	short getDifficulty(){return currentDifficulty;}
 
 	void deleteBlockFromChain(uint64_t index);
+
+	void read(std::vector<std::string>* blockchainFile);
 };
 
 #endif //BLOCKCHAIN_BLOCKCHAIN_H

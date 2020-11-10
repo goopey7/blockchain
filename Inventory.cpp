@@ -1,11 +1,26 @@
 //
 // Created by sam on 08/11/2020.
 //
-
+#ifdef WINDOWS
+#include <direct.h>
+#define GetCurrentDir _getcwd
+#else
+#include <unistd.h>
+#define GetCurrentDir getcwd
+#endif
 #include <chrono>
 #include <random>
 #include "sha256.h"
 #include "Inventory.h"
+
+//https://www.tutorialspoint.com/find-out-the-current-working-directory-in-c-cplusplus
+std::string getCurrentDir()
+{
+	char buff[FILENAME_MAX]; //create string buffer to hold path
+	GetCurrentDir(buff, FILENAME_MAX);
+	std::string cwd(buff);
+	return cwd;
+}
 
 inline uint64_t getNanosSinceEpoch()
 {
@@ -25,6 +40,9 @@ void pressEnterToContinue()
 	while(!input.empty());
 }
 
+// found this code over here:
+// http://www.lostintransaction.com/blog/2014/03/14/computing-a-bitcoin-address-part-1-private-to-public-key/
+// I made it a little more C++ friendly
 unsigned char* Inventory::priv2pub(const unsigned char* priv_hex, point_conversion_form_t form)
 {
 	// create group
@@ -86,6 +104,7 @@ std::string Inventory::generatePrivateKey()
 	// adding the real user ID of the calling process
 	randInt+=getuid();
 	std::string privKey = std::to_string(randInt);
+	privKey+=getCurrentDir(); // grab the current working directory and add that to the end of our random number
 	// hash it using SHA256
 	privKey=picosha2::hash256_hex_string(privKey);
 	for(int i=0;i<77;i++)std::cout<<"*";
@@ -100,10 +119,10 @@ std::string Inventory::generatePrivateKey()
 
 std::string Inventory::generatePublicKey(std::string privateKey)
 {
-	unsigned char* pub_hex = priv2pub(reinterpret_cast<const unsigned char*>(privateKey.c_str()), POINT_CONVERSION_UNCOMPRESSED );
+	unsigned char* pub_hex = priv2pub(reinterpret_cast<const unsigned char*>(privateKey.c_str()),
+								   POINT_CONVERSION_UNCOMPRESSED );
 	std::string pubKey = reinterpret_cast<char*>(pub_hex);
 	free( pub_hex );
-	std::cout << "Public key: " << pubKey << "\n";
 	return pubKey;
 }
 
@@ -111,8 +130,6 @@ Inventory::Inventory(std::string privateKey,Blockchain* _chain)
 {
 	publicKey = generatePublicKey(privateKey);
 	chain=_chain;
-	//TODO read the blockchain to determine our inventory
-	//TODO figure out how we are going to represent items in the blockchain
 }
 
 Inventory::Inventory(Blockchain* _chain)
@@ -124,14 +141,17 @@ Inventory::Inventory(Blockchain* _chain)
 
 void Inventory::updateInventory(Blockchain* _chain)
 {
-	chain=_chain;
-	items->clear();
+	chain=_chain; // make sure we have the latest chain
+	items->clear(); // we read the entire blockchain, so start with a fresh empty inventory
+	delete items;
 	items=new LLNode<Item>;
 	for(int i=0;i<chain->size();i++)
 	{
 		std::string data=chain->at(i)->getData();
-		if(data.find(publicKey)!=std::string::npos)
+		// we need to parse the transaction stored in the data field of the block
+		if(data.find(publicKey)!=std::string::npos) // if we find a block involving our public key
 		{
+			// my head works better when it's in a vector
 			std::vector<std::string> itemParseHelper;
 			std::string line;
 			for(int j=1;j<data.length();j++)
@@ -147,13 +167,18 @@ void Inventory::updateInventory(Blockchain* _chain)
 					}
 				}
 			}
+			// if we are receiving the item
 			if(data.find("TO "+publicKey)!=std::string::npos)
 			{
-				Item* newItem = new Item(itemParseHelper[2].substr(3),itemParseHelper[3].substr(5));
+				// add it to the inventory
+				Item* newItem = new Item(itemParseHelper[2].substr(3),
+							 itemParseHelper[3].substr(5));
 				items->add(newItem);
 			}
+			// if we are loosing an item
 			else if(data.find("FROM "+publicKey)!=std::string::npos)
 			{
+				// remove it from the inventory
 				Item itemToRemove(itemParseHelper[2].substr(3),itemParseHelper[3].substr(5));
 				for(int j=0;j<items->size();j++)
 				{

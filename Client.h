@@ -14,8 +14,8 @@
 #include "Blockchain.h"
 #include "Inventory.h"
 
-#define OFFICIAL_IP "192.168.103.187"
-//#define OFFICIAL_IP "74.72.186.84"
+//#define OFFICIAL_IP "192.168.103.187"
+#define OFFICIAL_IP "74.72.186.84"
 //#define OFFICIAL_IP "_official._tcp.blockchain.samcollier.tech"
 #define PORT 9162
 
@@ -46,7 +46,7 @@ public:
 	void openMainMenu();
 	void grabChain(std::string ip, int port);
 
-	void grabDifficulty();
+	void grabDifficulty(std::string ip,int port);
 };
 
 

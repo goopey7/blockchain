@@ -4,9 +4,7 @@
 
 #ifndef BLOCKCHAIN_INVENTORY_H
 #define BLOCKCHAIN_INVENTORY_H
-// found this code over here:
-// http://www.lostintransaction.com/blog/2014/03/14/computing-a-bitcoin-address-part-1-private-to-public-key/
-// I made it a little more C++ friendly
+
 #include <stdlib.h>
 
 #include <stdio.h>
@@ -23,6 +21,7 @@ private:
 	std::string publicKey;
 	LLNode<Item>* items=new LLNode<Item>;
 	Blockchain* chain;
+
 	// calculates and returns the public key associated with the given private key
 	// - input private key and output public key are in hexadecimal
 	// - output is null-terminated string
@@ -45,6 +44,7 @@ public:
 	// use this constructor to generate a new wallet
 	Inventory(Blockchain* _chain);
 	std::string getPublicKey(){return publicKey;}
+	// read the blockchain and update the inventory accordingly
 	void updateInventory(Blockchain* _chain);
 	Item* at(int index){return items->at(index);}
 	int size();

@@ -11,7 +11,8 @@ void Server::listenAndObeyClient()
 {
 	while(true)
 	{
-		int server_fd, new_socket, valread;
+		// https://www.geeksforgeeks.org/socket-programming-cc/
+		int serverFileDescriptor, newSocket, valread;
 		struct sockaddr_in address;
 		std::string bufferStr="";
 		int opt = 1;
@@ -20,14 +21,14 @@ void Server::listenAndObeyClient()
 		std::string hello = "Hello from server";
 
 		// Creating socket file descriptor
-		if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+		if ((serverFileDescriptor = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 		{
 			perror("socket failed");
 			exit(EXIT_FAILURE);
 		}
 
 		// Forcefully attaching socket to the port
-		if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+		if (setsockopt(serverFileDescriptor, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
 					   &opt, sizeof(opt)))
 		{
 			perror("setsockopt");
@@ -38,46 +39,50 @@ void Server::listenAndObeyClient()
 		address.sin_port = htons(PORT);
 
 		// Forcefully attaching socket to the port 8080
-		if (bind(server_fd, (struct sockaddr*) &address,
+		if (bind(serverFileDescriptor, (struct sockaddr*) &address,
 				 sizeof(address)) < 0)
 		{
 			perror("bind failed");
 			exit(EXIT_FAILURE);
 		}
-		if (listen(server_fd, 3) < 0)
+		if (listen(serverFileDescriptor, 3) < 0)
 		{
 			perror("listenForPing");
 			exit(EXIT_FAILURE);
 		}
-		if ((new_socket = accept(server_fd, (struct sockaddr*) &address,
-								 (socklen_t*) &addrlen)) < 0)
+		if ((newSocket = accept(serverFileDescriptor, (struct sockaddr*) &address,
+								(socklen_t*) &addrlen)) < 0)
 		{
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
+		// keep reading from the buffer until we have reached the delimiter
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
-			valread = read(new_socket, buffer, 1024);
-			bufferStr+=buffer;
+			valread = read(newSocket, buffer, 1024);
+			if(valread < 0)break; // this means there was an error reading the socket
+			bufferStr+=std::string(buffer, valread);
 		}
-		close(server_fd);
+		if(valread<0)bufferStr="";
 		bufferStr=bufferStr.substr(0,
 							 bufferStr.find(DELIM));
+		// send the difficulty
 		if (bufferStr=="SEND_DIFFICULTY")
 		{
 			std::string diffStr="DIFFICULTY:"+std::to_string(chain->getDifficulty())+DELIM;
-			send(new_socket,diffStr.c_str(),diffStr.length(),0);
-			std::cout << "Difficulty sent to " << inet_ntoa(address.sin_addr) << std::endl;
+			send(newSocket, diffStr.c_str(), diffStr.length(), 0);
+			if(bVerbose)std::cout << "Difficulty sent to " << inet_ntoa(address.sin_addr) << std::endl;
 		}
-		else if(bufferStr=="SEND_CHAIN")
+		else if(bufferStr=="SEND_CHAIN") // send the blockchain
 		{
 			std::vector<std::string>* chainToSend=chain->write("ServerBlockchain.txt");
-			if(chainToSend== nullptr)
+			if(chainToSend== nullptr) // if we don't have a blockchain, ask the client to send their blockchain.
 			{
 				std::string empty=std::string("EMPTY_CHAIN"+std::string(DELIM));
-				send(new_socket,empty.c_str(),empty.length(),0);
+				send(newSocket, empty.c_str(), empty.length(), 0);
 				break;
 			}
+			// we need to convert our stored blockchain to a string
 			std::string chainStr="BLOCKCHAIN_INCOMING:";
 			for(int i=0;i<chainToSend->size();i++)
 			{
@@ -85,35 +90,21 @@ void Server::listenAndObeyClient()
 				chainStr+='\n';
 			}
 			chainStr+=DELIM;
-			/*std::vector<std::string> buffersToSend;
-			std::string buffer;
-			for(int i=0;i<chainStr.length();i++)
-			{
-				if((i+1)%1000000==0&&i!=0)
-				{
-					buffersToSend.push_back(buffer);
-					buffer="";
-				}
-				buffer+=chainStr[i];
-			}
-			for(int i=0;i<buffersToSend.size();i++)
-			{
-				send(new_socket,buffersToSend[i].c_str(),buffersToSend[i].length(),0);
-				//std::this_thread::sleep_for(std::chrono::milliseconds(500));
-			}*/
-			send(new_socket,chainStr.c_str(),chainStr.length(),0);
-			std::cout << "Blockchain sent to " << inet_ntoa(address.sin_addr) << std::endl;
+			send(newSocket, chainStr.c_str(), chainStr.length(), 0);
+			if(bVerbose)std::cout << "Blockchain sent to " << inet_ntoa(address.sin_addr) << std::endl;
 			delete chainToSend;
 		}
 		// If we are receiving a client's blockchain
 		else if(bufferStr.find("BLOCKCHAIN_UPDATE_REQ:")!=std::string::npos)
 		{
-			std::cout << "BLOCKCHAIN_UPDATE_REQ from " << inet_ntoa(address.sin_addr) << std::endl;
+			if(bVerbose)std::cout << "BLOCKCHAIN_UPDATE_REQ from " << inet_ntoa(address.sin_addr) << std::endl;
 			std::string recvd="REQ_RECVD"+std::string(DELIM);
-			send(new_socket,recvd.c_str(),recvd.length(),0);
+			send(newSocket, recvd.c_str(), recvd.length(), 0);
 			bufferStr=bufferStr.substr(0,bufferStr.find_last_of('}')+1);
 			std::vector<std::string> clientChain;
 			std::string clientChainStr = bufferStr.substr(std::string("BLOCKCHAIN_UPDATE_REQ:").length());
+
+			// convert string into a vector which can be read into a blockchain
 			std::string lineToAdd;
 			int i=0;
 			while(i<clientChainStr.length())
@@ -127,78 +118,103 @@ void Server::listenAndObeyClient()
 					lineToAdd+=clientChainStr.c_str()[i];
 				i++;
 			}
-			if(clientChain.at(clientChain.size()-1)!="}")
-				clientChain.push_back("}");
-			ReadAndWrite::writeFile(&clientChain,"Server'sCopyOfAClient.txt");
+
 			Blockchain* incomingClientChain=new Blockchain;
-			incomingClientChain->read("Server'sCopyOfAClient.txt");
+			incomingClientChain->read(&clientChain);
 
 			//TODO This won't work when peers are validating a block.
 			// How do we handle when the server's block is deemed invalid?
-			bool b = incomingClientChain->validateChain();
-			bool c = incomingClientChain->length()>chain->length();
 			if(incomingClientChain->length()>chain->length() && incomingClientChain->validateChain())
 			{
 				delete chain;
 				chain=incomingClientChain;
 			}
+			else delete incomingClientChain;
 		}
 		else if(bufferStr=="Hello! Are you awake?")
 		{
 			std::string awake = "Yeah, I'm awake"+std::string(DELIM);
-			send(new_socket,awake.c_str(),awake.length(),0);
-			std::cout << "Received ping from " << inet_ntoa(address.sin_addr) << std::endl;
+			send(newSocket, awake.c_str(), awake.length(), 0);
+			if(bVerbose)std::cout << "Received ping from " << inet_ntoa(address.sin_addr) << std::endl;
 		}
-		else if(bufferStr=="Logging in...")
+		else if(bufferStr=="Logging in...") // create a thread for every logged in client
 		{
+			// ideally we will have a thread for every client that is connected
 			std::cout << inet_ntoa(address.sin_addr)<<" logged in\n";
-			//numClientsConnected++;
-			//connectedClients.push_back(inet_ntoa(address.sin_addr));
-			//std::thread* t=new std::thread(&Server::listenAndObeyClient,this);
-			//threads.push_back(t);
+			std::thread* t=new std::thread(&Server::listenAndObeyClient,this);
+			threads.push_back(t);
+		}
+		else if(bufferStr=="Disconnecting...")
+		{
+			// remove thread on client disconnect
+			std::cout << inet_ntoa(address.sin_addr) << " disconnected\n";
+			threads[threads.size()-1]->detach();
+			delete threads[threads.size()-1];
+			threads.pop_back();
 		}
 		else
 		{
 			std::string unknown = "ERROR:UnknownCommand"+std::string(DELIM);
-			send(new_socket,unknown.c_str(),unknown.length(),0);
+			send(newSocket, unknown.c_str(), unknown.length(), 0);
 		}
-		close(server_fd);
-		close(new_socket);
+		close(serverFileDescriptor);
+		close(newSocket);
 	}
 }
 
 void Server::start()
 {
 	std::thread tAcceptClients(&Server::listenAndObeyClient, this);
-	// distribute blockchain to those who don't already have one
-	// 
 	std::string input;
-	while(input!="s"&&input!="shutdown")
+	// this is where we capture commands input by the server operator
+	while(input!="s"&&input!="shutdown"&&input!="exit")
 	{
+		std::cout << "\n> ";
 		ReadAndWrite::getInputAsString(input);
 		if(input=="h"||input=="help"||input=="?")
 			displayHelpMenu();
 		else if(input.substr(0,14)=="difficulty set")
 		{
-			short cmdDifficulty = std::stoi(input.substr(15));
-			chain->setDifficulty(cmdDifficulty);
-
+			try
+			{
+				short cmdDifficulty = std::stoi(input.substr(15));
+				// I know sha256 is 64 bytes, but I don't really want difficulty to exceed 60
+				if(cmdDifficulty<60&&cmdDifficulty>0)
+					chain->setDifficulty(cmdDifficulty);
+				else std::cout << "\nPlease use a number between 0 and 60 exclusive\n";
+			}
+			catch(...)
+			{
+				std::cout << "\nUsage Invalid!\nUsage: difficulty set <<<NUMBER>>>\n";
+			}
 		}
-		else if(input!="s"&&input!="shutdown")
+		else if (input=="verbose"||input=="v")
 		{
-			std::cout << "Unknown Command: Use '?' to view the help screen\n";
+			bVerbose=!bVerbose; //toggle verbosity
+		}
+		else if(input=="clear"||input=="cls")
+		{
+			CLEAR_SCREEN
+		}
+		else if(input!="s"&&input!="shutdown"&&input!="exit")
+		{
+			std::cout << "\nUnknown Command: Use '?' to view the help screen\n";
 		}
 	}
+	// cleanup
 	tAcceptClients.detach();
 	for(int i=0;i<threads.size();i++)
+	{
 		threads[i]->detach();
+		delete threads[i];
+	}
 }
 
 Server::Server()
 {
+	//read in our chain
 	chain->read("ServerBlockchain.txt");
-	if(!chain->validateChain())
-		chain->write("ServerBlockchain.txt");
+	chain->validateChain(); // if the chain isn't valid, it becomes valid by deleting the invalid parts
 }
 
 void Server::displayHelpMenu()
@@ -206,7 +222,9 @@ void Server::displayHelpMenu()
 	std::cout << "**************************************** Help ****************************************\n";
 	std::cout << "command                                       explanation\n";
 	std::cout << "help, h, or ?                                 displays this help screen\n";
-	std::cout << "shutdown or s                                 shutdown server\n";
+	std::cout << "shutdown, exit, or s                          shutdown server\n";
 	std::cout << "difficulty set NUMBER                         set the difficulty to specified value\n";
+	std::cout << "verbose or v                                  toggle output verbosity\n";
+	std::cout << "clear or cls                                  clear screen\n";
 	std::cout << "**************************************************************************************\n";
 }
