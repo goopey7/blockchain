@@ -143,7 +143,6 @@ void Inventory::updateInventory(Blockchain* _chain)
 {
 	chain=_chain; // make sure we have the latest chain
 	items->clear(); // we read the entire blockchain, so start with a fresh empty inventory
-	delete items;
 	items=new LLNode<Item>;
 	for(int i=0;i<chain->size();i++)
 	{
@@ -167,25 +166,43 @@ void Inventory::updateInventory(Blockchain* _chain)
 					}
 				}
 			}
-			// if we are receiving the item
-			if(data.find("TO "+publicKey)!=std::string::npos)
+			// if we are making a transaction with ourselves (changing the name of an item), no need to add or remove
+			if(data.find("TO "+publicKey)==std::string::npos||data.find("FROM "+publicKey)==std::string::npos)
 			{
-				// add it to the inventory
-				Item* newItem = new Item(itemParseHelper[2].substr(3),
-							 itemParseHelper[3].substr(5));
-				items->add(newItem);
-			}
-			// if we are loosing an item
-			else if(data.find("FROM "+publicKey)!=std::string::npos)
-			{
-				// remove it from the inventory
-				Item itemToRemove(itemParseHelper[2].substr(3),itemParseHelper[3].substr(5));
-				for(int j=0;j<items->size();j++)
+				// if we are receiving the item
+				if(data.find("TO "+publicKey)!=std::string::npos)
 				{
-					if(items->at(j)->getItemID()==itemToRemove.getItemID()&&
-					   items->at(j)->getItemName()==itemToRemove.getItemName())
+					// add it to the inventory
+					Item* newItem = new Item(itemParseHelper[2].substr(3),
+											 itemParseHelper[3].substr(5));
+					items->add(newItem);
+				}
+				// if we are loosing an item
+				else if(data.find("FROM "+publicKey)!=std::string::npos)
+				{
+					// remove it from the inventory
+					Item itemToRemove(itemParseHelper[2].substr(3),itemParseHelper[3].substr(5));
+					for(int j=0;j<items->size();j++)
 					{
-						items->remove(j);
+						if(items->at(j)->getItemID()==itemToRemove.getItemID()&&
+						   items->at(j)->getItemName()==itemToRemove.getItemName())
+						{
+							items->remove(j);
+							break;
+						}
+					}
+				}
+			}
+			else // we are changing the item's name
+			{
+				std::string oldName = itemParseHelper[3].substr(5,itemParseHelper[3].find("-->")-6);
+				std::string newName = itemParseHelper[3].substr(itemParseHelper[3].find('>')+2);
+				std::string itemID = itemParseHelper[2].substr(3);
+				for(int i=0;i<items->size();i++)
+				{
+					if(items->at(i)->getItemID()==itemID&&items->at(i)->getItemName()==oldName)
+					{
+						items->at(i)->setItemName(newName);
 						break;
 					}
 				}

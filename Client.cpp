@@ -2,10 +2,11 @@
 // Created by sam on 20/10/2020.
 //
 
-// TODO if we get peer mining implemented, then they also get rewarded.
+// TODO if we get peer mining implemented, then they also should get rewarded.
 //TODO when an item's property changes, the owner should make a transaction to themselves, so that the change is updated
 // on the blockchain.
 // TODO fix duplication glitch when transferring an item to yourself
+// TODO verify all messages sent using SHA256
 
 #include "Client.h"
 
@@ -34,8 +35,7 @@ void Client::grabDifficulty(std::string ip,int port)
 	while(serverChainStr.find("DIFFICULTY:")==std::string::npos)
 	{
 		serverChainStr = sendMessageToServer("SEND_DIFFICULTY", ip, port, true);
-		// we have to wait until the server is ready to receive another message otherwise
-		// our request for the blockchain will be dropped.
+		// we have to wait until the server is ready to receive another message we don't want to overwhelm the server
 		// https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
@@ -86,24 +86,24 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 	else if (connect(sock, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
 	{
 		//printf("\nConnection Failed \n");
-		bOfficialServerIsOnline = false;
+		if(ip==OFFICIAL_IP)bOfficialServerIsOnline = false;
 		return "";
 	}
+	send(sock , message.c_str() , message.length() , 0 );
 	if(bExpectResponse)
 	{
-		send(sock , message.c_str() , message.length() , 0 );
 		std::string bufferStr;
+		// keep reading from the socket until we run into our delimiter
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
 			valread = read(sock,buffer,1024);
-			if(valread>0)
+			if(valread>0) // read success
 				bufferStr+=std::string(buffer,valread);
 			else return "ERROR READING SOCKET";
 		}
 		close(sock);
 		return bufferStr.substr(0,bufferStr.find(DELIM));
 	}
-	else send(sock , message.c_str() , message.length() , 0 );
 	return "";
 }
 
@@ -116,11 +116,12 @@ void Client::grabChain(std::string ip, int port)
 		else if(numPings%2==0) // flip between grabbing difficulty and grabbing the blockchain every 500ms
 		{
 			std::string serverChainStr;
+			// keep asking for a blockchain until we get one
 			while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
 			{
 				serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
-				// we have to wait until the server is ready to receive another message otherwise
-				// our request for the blockchain will be dropped.
+				// we have to wait until the server is ready to receive another message
+				// we don't want to overwhelm the server
 				// https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
@@ -194,7 +195,6 @@ void Client::grabChain(std::string ip, int port)
 
 void Client::openMainMenu()
 {
-	bool bBadInput=false;
 	std::string input;
 	clientMainMenu:
 	do
@@ -206,15 +206,6 @@ void Client::openMainMenu()
 		std::cout << "2: Connect to custom server\n";
 		std::cout << "Enter: Refresh\n";
 		ReadAndWrite::getInputAsString(input);
-		try
-		{
-			int isNumInput = std::stoi(input);
-			bBadInput=false;
-		}
-		catch (...)
-		{
-			bBadInput=true;
-		}
 		if(input=="1")
 		{
 			sendMessageToServer("Logging in...",OFFICIAL_IP,PORT);
@@ -232,7 +223,6 @@ void Client::openMainMenu()
 			if(response==SERVER_PING_RECV_MESSAGE)
 			{
 				sendMessageToServer("Logging in...",ip,PORT);
-				// grab chain every second
 				bShuttingDown=false;
 				tGrabChain=new std::thread(&Client::grabChain,this,ip,PORT);
 				goto menuAfterLoggingIn;
@@ -284,10 +274,7 @@ void Client::openMainMenu()
 				chain->deleteBlockFromChain(indexToRemove);
 				chain->write("ClientBlockchain.txt");
 			}
-			catch (...)
-			{
-
-			}
+			catch (...){}
 			bPause=false;
 		}
 		else if(input=="4") //access an inventory
@@ -328,7 +315,6 @@ void Client::openMainMenu()
 				std::cout << "Current Difficulty: " << chain->getDifficulty() << std::endl;
 				std::cout << "Inventory Address: " << inventory->getPublicKey() << std::endl;
 				std::cout << "Items: ";
-				int a =inventory->size();
 				for(int i=0;i<inventory->size();i++)
 				{
 					std::cout << i+1 << ") " << inventory->at(i)->getItemName() << " ";
@@ -336,14 +322,15 @@ void Client::openMainMenu()
 				std::cout << std::endl;
 				std::cout << "1: Attribute an item from the game\n";
 				std::cout << "2: Make a transaction\n";
+				std::cout << "3: Change the name of your item\n";
 				ReadAndWrite::getInputAsString(input);
 				if(input=="1")
 				{
 					bPause=true;
-					std::cout << "Enter item ID: ";
+					std::cout << "Enter item ID (not necessarily a number, just how the game will identify the item): ";
 					std::string itemID;
 					ReadAndWrite::getInputAsString(itemID);
-					std::cout << "Enter a name for this item: ";
+					std::cout << "Enter a personalized name for this item: ";
 					std::string itemName;
 					ReadAndWrite::getInputAsString(itemName);
 					std::string data = "\n\tITEM\n\t{\n\tID:"+itemID+"\n\tNAME:"+itemName+"\n\t}\n\tFROM GAME\n\tTO "+
@@ -356,18 +343,48 @@ void Client::openMainMenu()
 				else if(input=="2")
 				{
 					bPause=true;
-					//TODO needs to be error checked
 					std::cout << "Select the item from your inventory using it's corresponding number listed above: ";
-					std::string input;
 					ReadAndWrite::getInputAsString(input);
-					int indexOfChoice = std::stoi(input);
-					indexOfChoice--;
-					std::cout << "Enter the address of the recipient: ";
+					try
+					{
+						int indexOfChoice = std::stoi(input);
+						indexOfChoice--;
+						if(indexOfChoice<inventory->size()&&indexOfChoice>=0)
+						{
+							std::cout << "Enter the address of the recipient: ";
+							ReadAndWrite::getInputAsString(input);
+							chain->addBlockToChain(inventory->at(indexOfChoice)->toString()+"\n\tFROM "+
+												   inventory->getPublicKey()+"\n\tTO "+input);
+							chain->write("ClientBlockchain.txt");
+							inventory->updateInventory(chain);
+						}
+					}
+					catch(...){}
+					bPause=false;
+				}
+				else if(input=="3")
+				{
+					bPause=true;
+					std::cout << "Select the item from your inventory using it's corresponding number listed above: ";
 					ReadAndWrite::getInputAsString(input);
-					chain->addBlockToChain(inventory->at(indexOfChoice)->toString()+"\n\tFROM "+
-					inventory->getPublicKey()+"\n\tTO "+input);
-					chain->write("ClientBlockchain.txt");
-					inventory->updateInventory(chain);
+					try
+					{
+						int indexOfChoice = std::stoi(input);
+						indexOfChoice--;
+						if(indexOfChoice<inventory->size()&&indexOfChoice>=0)
+						{
+							std::string itemID = inventory->at(indexOfChoice)->getItemID();
+							std::string currentItemName=inventory->at(indexOfChoice)->getItemName();
+							std::cout << "Enter a new name for "<<itemID<<": ";
+							ReadAndWrite::getInputAsString(input);
+							chain->addBlockToChain("\n\tITEM\n\t{\n\tID:"+itemID+"\n\tNAME:"+currentItemName+" --> "
+							+input+"\n\t}\n\tFROM "+inventory->getPublicKey()+"\n\tTO "+
+												   inventory->getPublicKey());
+							chain->write("ClientBlockchain.txt");
+							inventory->updateInventory(chain);
+						}
+					}
+					catch(...){}
 					bPause=false;
 				}
 			}
@@ -399,5 +416,4 @@ void Client::sendChain(std::string ip, int port)
 		response = sendMessageToServer(chainStr,ip,port,true);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
-
 }
