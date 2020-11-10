@@ -160,3 +160,6 @@ But, I'm ok with that. I never thought I'd fix it!
 I've also added the current working directory as another thing that determines the private key.
 
 So now I'm going to try and fulfill some of the requirements in the google doc and add comments
+
+Added lots of comments and improved user experience. I'm considering removing the add block functionality since you can
+add blocks by making transactions. I'll keep the delete block in there since it is required.

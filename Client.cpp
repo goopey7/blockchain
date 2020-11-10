@@ -278,9 +278,16 @@ void Client::openMainMenu()
 			bPause=true;
 			std::cout << "Enter index of block to delete: ";
 			ReadAndWrite::getInputAsString(input);
-			uint64_t indexToRemove = std::stoll(input);
-			chain->deleteBlockFromChain(indexToRemove);
-			chain->write("ClientBlockchain.txt");
+			try
+			{
+				uint64_t indexToRemove = std::stoll(input);
+				chain->deleteBlockFromChain(indexToRemove);
+				chain->write("ClientBlockchain.txt");
+			}
+			catch (...)
+			{
+
+			}
 			bPause=false;
 		}
 		else if(input=="4") //access an inventory
