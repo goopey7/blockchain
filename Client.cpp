@@ -58,7 +58,7 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 	message+=DELIM;
 	int sock = 0, valread;
 	struct sockaddr_in serv_addr;
-	char buffer[1000000] = {0};
+	char buffer[1024] = {0};
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		printf("\n Socket creation error \n");
@@ -88,8 +88,8 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 		std::string bufferStr;
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
-			valread = read(sock,buffer,1000000);
-			bufferStr+=std::string(buffer);
+			valread = read(sock,buffer,1024);
+			bufferStr+=std::string(buffer,valread);
 		}
 		close(sock);
 		//grabResponse(bufferStr,port,ip);

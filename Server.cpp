@@ -16,7 +16,7 @@ void Server::listenAndObeyClient()
 		std::string bufferStr="";
 		int opt = 1;
 		int addrlen = sizeof(address);
-		char buffer[1000000] = {0};
+		char buffer[1024] = {0};
 		std::string hello = "Hello from server";
 
 		// Creating socket file descriptor
@@ -57,7 +57,7 @@ void Server::listenAndObeyClient()
 		}
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
-			valread = read(new_socket, buffer, 1000000);
+			valread = read(new_socket, buffer, 1024);
 			bufferStr+=buffer;
 		}
 		close(server_fd);
