@@ -451,7 +451,6 @@ void Client::sendChain(std::string ip, int port)
 		chainStr+=chainToSend->at(i);
 		chainStr+='\n';
 	}
-	chainStr+=DELIM;
 	std::string response;
 	while(response!="REQ_RECVD")
 	{
