@@ -141,6 +141,9 @@ Sunday (11/8/20)
 private keys for their wallets, I ended up taking some C code off of the internet, and my project now requires the
 OpenSSL library.
 
+https://github.com/goopey7/blockchain/commit/c444ca071a11dff2bdbf1b75a635217c67accad0
+https://github.com/goopey7/blockchain/commit/6638eb6a265394d6e5fd64f052c03e74056286b8
+
 Implemented the inventory class and the item class. To generate the private key, the program generates entropy by adding
 the nano seconds since epoch, a "randomly" generated number, and the real user ID of the calling process. That number is
 then hashed using SHA256. And, that's the private key. We get the public key using ECDSA algorithm used for bitcoin.
@@ -150,6 +153,10 @@ because the message is larger than the size of the buffer. A '\n' character will
 my client will crash because it can't parse it correctly.
 
 Monday (11/9/20)
+https://github.com/goopey7/blockchain/commit/eba43c82191bde3414358f1ce82c432e39f635ff
+https://github.com/goopey7/blockchain/commit/8f40e43dbfc26fd599ca8596f166249a1bd1a3cf
+https://github.com/goopey7/blockchain/commit/549d593b35ac496ca47eaf9b5775aa19b8dadf59
+https://github.com/goopey7/blockchain/commit/a0bdf70c7f7f5d389e9e9be351e5d57e4bb1f698
 
 I FINALLY SQUASHED THE BUG. This means that I can get rid of so much code in the parser that anticipated this weird
 trickery! After a lot of debugging, I decided to ask the question on stackoverflow, and the solution to my problem
@@ -165,6 +172,14 @@ Added lots of comments and improved user experience. I'm considering removing th
 add blocks by making transactions. I'll keep the delete block in there since it is required.
 
 Tuesday (11/10/20)
+https://github.com/goopey7/blockchain/commit/fad13eb7d4c80454ef3e860b0acce5b727a1c81d
 Just adding some of the requirements in the google doc. I got rid of the add block functionality since you can add
 blocks through making transactions/attributing items from the game. Added the ability to view blocks through the
 program, but it's probably easier to read in a text editor, since I format the blockchain so cleanly in the text file.
+
+https://github.com/goopey7/blockchain/commit/d40a17ecb89537117d5d6e840cf79e793e641b1d
+
+https://github.com/goopey7/blockchain/commit/fad13eb7d4c80454ef3e860b0acce5b727a1c81d
+I have also added integrity checks to all messages sent through the socket using SHA-256. Now, since I know I can't get
+this into Unreal Engine by midnight, I'm going to spend the rest of my time getting it to compile on Windows so that I can
+test it out with my friends.
