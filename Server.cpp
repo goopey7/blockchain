@@ -4,17 +4,138 @@
 
 #include "Server.h"
 #include <iostream>
-#include <arpa/inet.h>
 #include "Blockchain.h"
+
+#define DEFAULT_BUFLEN 1024
+#define DEFAULT_PORT "9162"
 
 void Server::listenAndObeyClient()
 {
 	while(true)
 	{
+		std::string bufferStr = "";
+		std::string ipStr = "";
+#ifndef WIN64
+		WSADATA wsaData;
+		int iResult;
+
+		SOCKET ListenSocket = INVALID_SOCKET;
+		SOCKET clientSocket = INVALID_SOCKET;
+
+		struct addrinfo* result = NULL;
+		struct addrinfo hints;
+
+		int iSendResult;
+		char recvbuf[DEFAULT_BUFLEN];
+		int recvbuflen = DEFAULT_BUFLEN;
+
+		// Initialize Winsock
+		iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+		if (iResult != 0) {
+			printf("WSAStartup failed with error: %d\n", iResult);
+			return;
+		}
+
+		ZeroMemory(&hints, sizeof(hints));
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = IPPROTO_TCP;
+		hints.ai_flags = AI_PASSIVE;
+
+		// Resolve the server address and port
+		iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
+		if (iResult != 0) {
+			printf("getaddrinfo failed with error: %d\n", iResult);
+			WSACleanup();
+			return;
+		}
+
+		// Create a SOCKET for connecting to server
+		ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+		if (ListenSocket == INVALID_SOCKET) {
+			printf("socket failed with error: %ld\n", WSAGetLastError());
+			freeaddrinfo(result);
+			WSACleanup();
+			return;
+		}
+
+		// Setup the TCP listening socket
+		iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
+		if (iResult == SOCKET_ERROR) {
+			printf("bind failed with error: %d\n", WSAGetLastError());
+			freeaddrinfo(result);
+			closesocket(ListenSocket);
+			WSACleanup();
+			return;
+		}
+
+		freeaddrinfo(result);
+
+		iResult = listen(ListenSocket, SOMAXCONN);
+		if (iResult == SOCKET_ERROR) {
+			printf("listen failed with error: %d\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return;
+		}
+
+		// Accept a client socket
+		clientSocket = accept(ListenSocket, NULL, NULL);
+		if (clientSocket == INVALID_SOCKET) {
+			printf("accept failed with error: %d\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return;
+		}
+
+		// No longer need server socket
+		closesocket(ListenSocket);
+
+		// Receive until the peer shuts down the connection
+		do {
+
+			iResult = recv(clientSocket, recvbuf, recvbuflen, 0);
+			if (iResult > 0) {
+				//printf("Bytes received: %d\n", iResult);
+				bufferStr += std::string(recvbuf, iResult);
+
+				// Echo the buffer back to the sender
+				iSendResult = send(clientSocket, recvbuf, iResult, 0);
+				if (iSendResult == SOCKET_ERROR) {
+					printf("send failed with error: %d\n", WSAGetLastError());
+					closesocket(clientSocket);
+					WSACleanup();
+					return;
+				}
+				//printf("Bytes sent: %d\n", iSendResult);
+			}
+			else if (iResult == 0)
+				printf("Connection closing...\n");
+			else {
+				printf("recv failed with error: %d\n", WSAGetLastError());
+				closesocket(clientSocket);
+				WSACleanup();
+				return;
+			}
+
+		} while (iResult > 0);
+
+		// shutdown the connection since we're done
+		iResult = shutdown(clientSocket, SD_SEND);
+		if (iResult == SOCKET_ERROR) {
+			printf("shutdown failed with error: %d\n", WSAGetLastError());
+			closesocket(clientSocket);
+			WSACleanup();
+			return;
+		}
+
+		// cleanup
+		closesocket(clientSocket);
+		WSACleanup();
+#else
 		// https://www.geeksforgeeks.org/socket-programming-cc/
-		int serverFileDescriptor, newSocket, valread;
+		int serverFileDescriptor, clientSocket, valread;
 		struct sockaddr_in address;
-		std::string bufferStr="";
 		int opt = 1;
 		int addrlen = sizeof(address);
 		char buffer[1024] = {0};
@@ -50,7 +171,7 @@ void Server::listenAndObeyClient()
 			perror("listenForPing");
 			exit(EXIT_FAILURE);
 		}
-		if ((newSocket = accept(serverFileDescriptor, (struct sockaddr*) &address,
+		if ((clientSocket = accept(serverFileDescriptor, (struct sockaddr*) &address,
 								(socklen_t*) &addrlen)) < 0)
 		{
 			perror("accept");
@@ -59,15 +180,22 @@ void Server::listenAndObeyClient()
 		// keep reading from the buffer until we have reached the delimiter
 		while(bufferStr.find(DELIM)==std::string::npos)
 		{
-			valread = read(newSocket, buffer, 1024);
+			valread = read(clientSocket, buffer, 1024);
 			if(valread < 0)break; // this means there was an error reading the socket
 			bufferStr+=std::string(buffer, valread);
 		}
 		if(valread<0)bufferStr="";
-		bufferStr=bufferStr.substr(0,
-							 bufferStr.find(DELIM));
-		std::string hashToCheck = bufferStr.substr(bufferStr.length()-64,bufferStr.length());
-		bufferStr=bufferStr.substr(0,bufferStr.length()-64);
+		ipStr = inet_ntoa(address.sin_addr);
+#endif
+		std::string hashToCheck;
+		if (bufferStr.length() > std::string(DELIM).length() + 64)
+		{
+			bufferStr = bufferStr.substr(0,
+				bufferStr.find(DELIM));
+			hashToCheck = bufferStr.substr(bufferStr.length() - 64, bufferStr.length());
+			bufferStr = bufferStr.substr(0, bufferStr.length() - 64);
+		}
+		else hashToCheck = "no lol";
 		if(hashToCheck!=picosha2::hash256_hex_string(bufferStr))
 			bufferStr="";
 		// send the difficulty
@@ -76,8 +204,8 @@ void Server::listenAndObeyClient()
 			std::string diffStr="DIFFICULTY:"+std::to_string(chain->getDifficulty());
 			diffStr+=picosha2::hash256_hex_string(diffStr);
 			diffStr+=DELIM;
-			send(newSocket, diffStr.c_str(), diffStr.length(), 0);
-			if(bVerbose)std::cout << "Difficulty sent to " << inet_ntoa(address.sin_addr) << std::endl;
+			send(clientSocket, diffStr.c_str(), diffStr.length(), 0);
+			if(bVerbose)std::cout << "Difficulty sent to " << ipStr << std::endl;
 		}
 		else if(bufferStr=="SEND_CHAIN") // send the blockchain
 		{
@@ -87,7 +215,7 @@ void Server::listenAndObeyClient()
 				std::string empty="EMPTY_CHAIN";
 				empty+=picosha2::hash256_hex_string(empty);
 				empty+=std::string(DELIM);
-				send(newSocket, empty.c_str(), empty.length(), 0);
+				send(clientSocket, empty.c_str(), empty.length(), 0);
 				break;
 			}
 			// we need to convert our stored blockchain to a string
@@ -99,18 +227,18 @@ void Server::listenAndObeyClient()
 			}
 			chainStr+=picosha2::hash256_hex_string(chainStr);
 			chainStr+=DELIM;
-			send(newSocket, chainStr.c_str(), chainStr.length(), 0);
-			if(bVerbose)std::cout << "Blockchain sent to " << inet_ntoa(address.sin_addr) << std::endl;
+			send(clientSocket, chainStr.c_str(), chainStr.length(), 0);
+			if(bVerbose)std::cout << "Blockchain sent to " << ipStr << std::endl;
 			delete chainToSend;
 		}
 		// If we are receiving a client's blockchain
 		else if(bufferStr.find("BLOCKCHAIN_UPDATE_REQ:")!=std::string::npos)
 		{
-			if(bVerbose)std::cout << "BLOCKCHAIN_UPDATE_REQ from " << inet_ntoa(address.sin_addr) << std::endl;
+			if(bVerbose)std::cout << "BLOCKCHAIN_UPDATE_REQ from " << ipStr << std::endl;
 			std::string recvd="REQ_RECVD";
 			recvd+=picosha2::hash256_hex_string(recvd);
 			recvd+=std::string(DELIM);
-			send(newSocket, recvd.c_str(), recvd.length(), 0);
+			send(clientSocket, recvd.c_str(), recvd.length(), 0);
 			bufferStr=bufferStr.substr(0,bufferStr.find_last_of('}')+1);
 			std::vector<std::string> clientChain;
 			std::string clientChainStr = bufferStr.substr(std::string("BLOCKCHAIN_UPDATE_REQ:").length());
@@ -147,20 +275,20 @@ void Server::listenAndObeyClient()
 			std::string awake = "Yeah, I'm awake";
 			awake+=picosha2::hash256_hex_string(awake);
 			awake+=std::string(DELIM);
-			send(newSocket, awake.c_str(), awake.length(), 0);
-			if(bVerbose)std::cout << "Received ping from " << inet_ntoa(address.sin_addr) << std::endl;
+			send(clientSocket, awake.c_str(), awake.length(), 0);
+			if(bVerbose)std::cout << "Received ping from " << ipStr << std::endl;
 		}
 		else if(bufferStr=="Logging in...") // create a thread for every logged in client
 		{
 			// ideally we will have a thread for every client that is connected
-			std::cout << inet_ntoa(address.sin_addr)<<" logged in\n";
+			std::cout << ipStr <<" logged in\n";
 			std::thread* t=new std::thread(&Server::listenAndObeyClient,this);
 			threads.push_back(t);
 		}
 		else if(bufferStr=="Disconnecting...")
 		{
 			// remove thread on client disconnect
-			std::cout << inet_ntoa(address.sin_addr) << " disconnected\n";
+			std::cout << ipStr << " disconnected\n";
 			threads[threads.size()-1]->detach();
 			delete threads[threads.size()-1];
 			threads.pop_back();
@@ -170,10 +298,13 @@ void Server::listenAndObeyClient()
 			std::string unknown = "ERROR:UnknownCommand";
 			unknown+=picosha2::hash256_hex_string(unknown);
 			unknown+=std::string(DELIM);
-			send(newSocket, unknown.c_str(), unknown.length(), 0);
+			send(clientSocket, unknown.c_str(), unknown.length(), 0);
 		}
-		close(serverFileDescriptor);
-		close(newSocket);
+#ifndef WIN64
+		closesocket(clientSocket);
+#else
+		close(clientSocket);
+#endif
 	}
 }
 

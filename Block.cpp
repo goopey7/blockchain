@@ -34,7 +34,7 @@ std::string Block::generateHash()
 std::string Block::generateTimeStamp()
 {
 	long t = std::time(nullptr);
-	tm localTime = *std::localtime(&t);
+	tm localTime = *std::localtime(reinterpret_cast<const time_t *>(&t));
 	std::ostringstream oss;
 	oss << std::put_time(&localTime, "%d-%m-%Y %H:%M:%S");
 	std::string returnStr = oss.str();

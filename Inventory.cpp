@@ -1,7 +1,7 @@
 //
 // Created by sam on 08/11/2020.
 //
-#ifdef WINDOWS
+#ifndef WIN64
 #include <direct.h>
 #define GetCurrentDir _getcwd
 #else
@@ -102,7 +102,10 @@ std::string Inventory::generatePrivateKey()
 	// adding the nanoseconds since epoch
 	randInt+=getNanosSinceEpoch();
 	// adding the real user ID of the calling process
+#ifndef WIN64
+#else
 	randInt+=getuid();
+#endif
 	std::string privKey = std::to_string(randInt);
 	privKey+=getCurrentDir(); // grab the current working directory and add that to the end of our random number
 	// hash it using SHA256
@@ -122,7 +125,6 @@ std::string Inventory::generatePublicKey(std::string privateKey)
 	unsigned char* pub_hex = priv2pub(reinterpret_cast<const unsigned char*>(privateKey.c_str()),
 								   POINT_CONVERSION_UNCOMPRESSED );
 	std::string pubKey = reinterpret_cast<char*>(pub_hex);
-	free( pub_hex );
 	return pubKey;
 }
 

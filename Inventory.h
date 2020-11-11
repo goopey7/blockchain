@@ -6,7 +6,6 @@
 #define BLOCKCHAIN_INVENTORY_H
 
 #include <stdlib.h>
-
 #include <stdio.h>
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h> // for NID_secp256k1

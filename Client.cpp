@@ -31,7 +31,7 @@ void Client::grabDifficulty(std::string ip,int port)
 	std::string serverChainStr;
 	while(serverChainStr.find("DIFFICULTY:")==std::string::npos)
 	{
-		serverChainStr = sendMessageToServer("SEND_DIFFICULTY", ip, port, true);
+		serverChainStr = sendMessageToServer("SEND_DIFFICULTY", ip.c_str(), port, true);
 		// we have to wait until the server is ready to receive another message we don't want to overwhelm the server
 		// https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -53,17 +53,113 @@ void Client::pingMainServer()
 		bOfficialServerIsOnline=true;
 }
 
-std::string Client::sendMessageToServer(std::string message,std::string ip,int port,bool bExpectResponse)
+std::string Client::sendMessageToServer(std::string message, const char* ip, int port, bool bExpectResponse)
 {
-	message+=picosha2::hash256_hex_string(message);
-	message+=DELIM;
+	message += picosha2::hash256_hex_string(message);
+	message += DELIM;
+	std::string bufferStr="";
+#ifndef WIN64
+	WSADATA wsaData;
+	SOCKET ConnectSocket = INVALID_SOCKET;
+	struct addrinfo* result = NULL,
+		* ptr = NULL,
+		hints;
+	char recvbuf[DEFAULT_BUFLEN];
+	int iResult;
+	int recvbuflen = DEFAULT_BUFLEN;
+
+	// Initialize Winsock
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0) {
+		printf("WSAStartup failed with error: %d\n", iResult);
+		return "";
+	}
+
+	ZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	// Resolve the server address and port
+	iResult = getaddrinfo(ip, DEFAULT_PORT, &hints, &result);
+	if (iResult != 0) {
+		printf("getaddrinfo failed with error: %d\n", iResult);
+		WSACleanup();
+		return "";
+	}
+
+	// Attempt to connect to an address until one succeeds
+	for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
+
+		// Create a SOCKET for connecting to server
+		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
+			ptr->ai_protocol);
+		if (ConnectSocket == INVALID_SOCKET) {
+			printf("socket failed with error: %ld\n", WSAGetLastError());
+			WSACleanup();
+			return "";
+		}
+
+		// Connect to server.
+		iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+		if (iResult == SOCKET_ERROR) {
+			closesocket(ConnectSocket);
+			ConnectSocket = INVALID_SOCKET;
+			continue;
+		}
+		break;
+	}
+
+	freeaddrinfo(result);
+
+	if (ConnectSocket == INVALID_SOCKET) {
+		printf("Unable to connect to server!\n");
+		WSACleanup();
+		return "";
+	}
+
+	// Send an initial buffer
+	iResult = send(ConnectSocket, message.c_str(), (int)strlen(message.c_str()), 0);
+	if (iResult == SOCKET_ERROR) {
+		printf("send failed with error: %d\n", WSAGetLastError());
+		closesocket(ConnectSocket);
+		WSACleanup();
+		return "";
+	}
+
+	// shutdown the connection since no more data will be sent
+	iResult = shutdown(ConnectSocket, SD_SEND);
+	if (iResult == SOCKET_ERROR) {
+		printf("shutdown failed with error: %d\n", WSAGetLastError());
+		closesocket(ConnectSocket);
+		WSACleanup();
+		return "";
+	}
+
+	// Receive until the peer closes the connection
+	do {
+
+		iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+		if (iResult > 0)
+			bufferStr += std::string(recvbuf, iResult);
+		//else if (iResult == 0)
+			//printf("Connection closed\n");
+		//else
+			//printf("recv failed with error: %d\n", WSAGetLastError());
+
+	} while (iResult > 0);
+
+	// cleanup
+	closesocket(ConnectSocket);
+	WSACleanup();
+#else
 	// https://www.geeksforgeeks.org/socket-programming-cc/
 	int sock = 0, valread;
 	struct sockaddr_in serverAddress;
-	char buffer[1024] = {0};
+	char buffer[1024] = { 0 };
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
-		bOfficialServerIsOnline=false;
+		bOfficialServerIsOnline = false;
 		printf("\n Socket creation error \n");
 		return "";
 	}
@@ -72,34 +168,37 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 	serverAddress.sin_port = htons(port);
 
 	// Convert IPv4 and IPv6 addresses from text to binary form
-	if(inet_pton(AF_INET, ip.c_str(), &serverAddress.sin_addr) <= 0)
+	if (inet_pton(AF_INET, ip.c_str(), &serverAddress.sin_addr) <= 0)
 	{
 		printf("\nInvalid address/ Address not supported \n");
 		return "";
 	}
-	else if (connect(sock, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
+	else if (connect(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0)
 	{
 		//printf("\nConnection Failed \n");
-		if(ip==OFFICIAL_IP)bOfficialServerIsOnline = false;
+		if (ip == OFFICIAL_IP)bOfficialServerIsOnline = false;
 		return "";
 	}
-	send(sock , message.c_str() , message.length() , 0 );
-	if(bExpectResponse)
+	send(sock, message.c_str(), message.length(), 0);
+	if (bExpectResponse)
 	{
-		std::string bufferStr;
 		// keep reading from the socket until we run into our delimiter
-		while(bufferStr.find(DELIM)==std::string::npos)
+		while (bufferStr.find(DELIM) == std::string::npos)
 		{
-			valread = read(sock,buffer,1024);
-			if(valread>0) // read success
-				bufferStr+=std::string(buffer,valread);
+			valread = read(sock, buffer, 1024);
+			if (valread > 0) // read success
+				bufferStr += std::string(buffer, valread);
 			else return "ERROR READING SOCKET";
 		}
 		close(sock);
-		bufferStr=bufferStr.substr(0,bufferStr.find(DELIM));
-		std::string hashToCheck = bufferStr.substr(bufferStr.length()-64,bufferStr.length());
-		bufferStr=bufferStr.substr(0,bufferStr.length()-64);
-		if(hashToCheck!=picosha2::hash256_hex_string(bufferStr))
+	}
+#endif
+	if (bExpectResponse)
+	{
+		bufferStr = bufferStr.substr(0, bufferStr.find(DELIM));
+		std::string hashToCheck = bufferStr.substr(bufferStr.length() - 64, bufferStr.length());
+		bufferStr = bufferStr.substr(0, bufferStr.length() - 64);
+		if (hashToCheck != picosha2::hash256_hex_string(bufferStr))
 			return "";
 		return bufferStr;
 	}
@@ -118,7 +217,7 @@ void Client::grabChain(std::string ip, int port)
 			// keep asking for a blockchain until we get one
 			while(serverChainStr!="EMPTY_CHAIN"&&serverChainStr.find("BLOCKCHAIN_INCOMING:")==std::string::npos)
 			{
-				serverChainStr = sendMessageToServer("SEND_CHAIN",ip, port,true);
+				serverChainStr = sendMessageToServer("SEND_CHAIN",ip.c_str(), port,true);
 				// we have to wait until the server is ready to receive another message
 				// we don't want to overwhelm the server
 				// https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
@@ -153,7 +252,7 @@ void Client::grabChain(std::string ip, int port)
 						lineToAdd+=serverChainStr.c_str()[i];
 					i++;
 				}
-				if(serverChain==nullptr)serverChain->clear();
+				if(serverChain!=NULL)serverChain->clear();
 				serverChain = new Blockchain;
 				serverChain->read(&readChain);
 				uint64_t serverSize=serverChain->size();
@@ -166,7 +265,7 @@ void Client::grabChain(std::string ip, int port)
 				else chainSize=0;
 				if(serverSize>=chainSize&&serverChain->validateChain())
 				{
-					if(chain!=nullptr)
+					if(chain!=NULL)
 					{
 						delete chain;
 					}
@@ -219,10 +318,10 @@ void Client::openMainMenu()
 		{
 			std::cout << "Enter the IP address: ";
 			ReadAndWrite::getInputAsString(ip);
-			std::string response = sendMessageToServer(SERVER_PING_SEND_MESSAGE,ip,PORT,true);
+			std::string response = sendMessageToServer(SERVER_PING_SEND_MESSAGE,ip.c_str(),PORT,true);
 			if(response==SERVER_PING_RECV_MESSAGE)
 			{
-				sendMessageToServer("Logging in...",ip,PORT);
+				sendMessageToServer("Logging in...",ip.c_str(),PORT);
 				bShuttingDown=false;
 				tGrabChain=new std::thread(&Client::grabChain,this,ip,PORT);
 				goto menuAfterLoggingIn;
@@ -437,7 +536,7 @@ void Client::openMainMenu()
 	{
 		bShuttingDown=true;
 		tGrabChain->detach();
-		sendMessageToServer("Disconnecting...",ip,PORT);
+		sendMessageToServer("Disconnecting...",ip.c_str(),PORT);
 	}
 	goto clientMainMenu;
 }
@@ -451,11 +550,10 @@ void Client::sendChain(std::string ip, int port)
 		chainStr+=chainToSend->at(i);
 		chainStr+='\n';
 	}
-	chainStr+=DELIM;
 	std::string response;
 	while(response!="REQ_RECVD")
 	{
-		response = sendMessageToServer(chainStr,ip,port,true);
+		response = sendMessageToServer(chainStr,ip.c_str(),port,true);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 }
