@@ -194,9 +194,9 @@ void Server::start()
 			{
 				short cmdDifficulty = std::stoi(input.substr(15));
 				// I know sha256 is 64 bytes, but I don't really want difficulty to exceed 60
-				if(cmdDifficulty<60&&cmdDifficulty>0)
+				if(cmdDifficulty<11&&cmdDifficulty>0)
 					chain->setDifficulty(cmdDifficulty);
-				else std::cout << "\nPlease use a number between 0 and 60 exclusive\n";
+				else std::cout << "\nPlease use a number between 0 and 11 exclusive\n";
 			}
 			catch(...)
 			{
