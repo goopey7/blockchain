@@ -163,3 +163,8 @@ So now I'm going to try and fulfill some of the requirements in the google doc a
 
 Added lots of comments and improved user experience. I'm considering removing the add block functionality since you can
 add blocks by making transactions. I'll keep the delete block in there since it is required.
+
+Tuesday (11/10/20)
+Just adding some of the requirements in the google doc. I got rid of the add block functionality since you can add
+blocks through making transactions/attributing items from the game. Added the ability to view blocks through the
+program, but it's probably easier to read in a text editor, since I format the blockchain so cleanly in the text file.

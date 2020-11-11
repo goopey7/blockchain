@@ -14,8 +14,8 @@
 #include "Blockchain.h"
 #include "Inventory.h"
 
-//#define OFFICIAL_IP "192.168.103.187"
-#define OFFICIAL_IP "74.72.186.84"
+#define OFFICIAL_IP "192.168.103.187"
+//#define OFFICIAL_IP "74.72.186.84"
 //#define OFFICIAL_IP "_official._tcp.blockchain.samcollier.tech"
 #define PORT 9162
 
@@ -29,6 +29,7 @@ class Client
 {
 private:
 	bool bOfficialServerIsOnline=false;
+	bool bPlayOffline=false;
 	Blockchain* chain= nullptr;
 	Blockchain* serverChain;
 	Inventory* inventory;
@@ -39,9 +40,9 @@ private:
 	std::thread* tGrabChain;
 	bool bShuttingDown=false;
 	bool bPause=false;
+	std::string ip;
 public:
 	Client();
-	~Client();
 	bool isOfficalServerOnline(){return bOfficialServerIsOnline;}
 	void openMainMenu();
 	void grabChain(std::string ip, int port);

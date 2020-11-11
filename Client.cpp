@@ -3,9 +3,6 @@
 //
 
 // TODO if we get peer mining implemented, then they also should get rewarded.
-//TODO when an item's property changes, the owner should make a transaction to themselves, so that the change is updated
-// on the blockchain.
-// TODO fix duplication glitch when transferring an item to yourself
 // TODO verify all messages sent using SHA256
 
 #include "Client.h"
@@ -45,11 +42,6 @@ void Client::grabDifficulty(std::string ip,int port)
 				std::string("DIFFICULTY:").length()));
 		chain->setDifficulty(diffToSet);
 	}
-}
-
-Client::~Client()
-{
-
 }
 
 void Client::pingMainServer()
@@ -204,10 +196,12 @@ void Client::openMainMenu()
 		std::cout << "Main Server Status: " << (bOfficialServerIsOnline ? "Online" : "Offline") << std::endl;
 		std::cout << "1: Join main server\n";
 		std::cout << "2: Connect to custom server\n";
+		std::cout << "3: Play offline\n";
 		std::cout << "Enter: Refresh\n";
 		ReadAndWrite::getInputAsString(input);
-		if(input=="1")
+		if(input=="1"&&bOfficialServerIsOnline)
 		{
+			ip=OFFICIAL_IP;
 			sendMessageToServer("Logging in...",OFFICIAL_IP,PORT);
 			// grab chain every second
 			bShuttingDown=false;
@@ -217,7 +211,6 @@ void Client::openMainMenu()
 		else if(input=="2")
 		{
 			std::cout << "Enter the IP address: ";
-			std::string ip;
 			ReadAndWrite::getInputAsString(ip);
 			std::string response = sendMessageToServer(SERVER_PING_SEND_MESSAGE,ip,PORT,true);
 			if(response==SERVER_PING_RECV_MESSAGE)
@@ -233,6 +226,11 @@ void Client::openMainMenu()
 				pressEnterToCont();
 			}
 		}
+		else if(input=="3")
+		{
+			bPlayOffline=true;
+			goto menuAfterLoggingIn;
+		}
 		else
 		{
 			pingMainServer();
@@ -243,41 +241,61 @@ void Client::openMainMenu()
 	menuAfterLoggingIn:
 	do
 	{
+		if(ip==OFFICIAL_IP&&!bOfficialServerIsOnline)break;
 		CLEAR_SCREEN
 		input="";
 		std::cout << "Main Server Status: " << (bOfficialServerIsOnline ? "Online" : "Offline") << std::endl;
 		std::cout << "Current Difficulty: " << chain->getDifficulty() << std::endl;
 		std::cout << "1: Explore Chain\n";
-		std::cout << "2: Create Block\n";
-		std::cout << "3: Delete Block\n";
-		std::cout << "4: Access wallet\n";
-		std::cout << "5: Generate wallet\n";
+		std::cout << "2: Delete Block\n";
+		std::cout << "3: Access inventory\n";
+		std::cout << "4: Create new inventory\n";
 		std::cout << "Enter: Refresh\n";
 		ReadAndWrite::getInputAsString(input);
-		if(input=="2")
+		if(input=="1")
 		{
 			bPause=true;
-			std::cout << "Enter data: ";
-			std::string input;
-			ReadAndWrite::getInputAsString(input);
-			chain->addBlockToChain(input);
-			bPause=false;
-		}
-		else if(input=="3")
-		{
-			bPause=true;
-			std::cout << "Enter index of block to delete: ";
+			std::cout << "Enter the index of the block you'd like to view: ";
 			ReadAndWrite::getInputAsString(input);
 			try
 			{
-				uint64_t indexToRemove = std::stoll(input);
-				chain->deleteBlockFromChain(indexToRemove);
-				chain->write("ClientBlockchain.txt");
+				uint64_t index = std::stoll(input);
+				Block* blockToView = chain->at(index);
+				std::cout << "Index: " << blockToView->getIndex() << std::endl;
+				std::cout << "Data: " << blockToView->getData() << std::endl;
+				std::cout << "Previous Hash: " << blockToView->getPrevHash() << std::endl;
+				std::cout << "Time Stamp: " << blockToView->getTimeStamp() << std::endl;
+				std::cout << "Nonce: " << blockToView->getNonce() << std::endl;
+				std::cout << "Difficulty: " << blockToView->getDifficulty() << std::endl;
+				pressEnterToCont();
 			}
 			catch (...){}
 			bPause=false;
 		}
-		else if(input=="4") //access an inventory
+		else if(input=="2")
+		{
+			bPause=true;
+			do
+			{
+				std::cout << "Are you sure you want to delete a block from the blockchain? (Y/N)";
+				ReadAndWrite::getInputAsString(input);
+			}
+			while(input!="y"&&input!="Y"&&input!="n"&&input!="N");
+			if(input=="y"||input=="Y")
+			{
+				std::cout << "Enter index of block to delete: ";
+				ReadAndWrite::getInputAsString(input);
+				try
+				{
+					uint64_t indexToRemove = std::stoll(input);
+					chain->deleteBlockFromChain(indexToRemove);
+					chain->write("ClientBlockchain.txt");
+				}
+				catch (...){}
+			}
+			bPause=false;
+		}
+		else if(input=="3") //access an inventory
 		{
 			input="";
 			do
@@ -294,7 +312,7 @@ void Client::openMainMenu()
 			}
 			else input="";
 		}
-		else if(input=="5")
+		else if(input=="4") // generate an inventory
 		{
 			inventory=new Inventory(chain);
 			goto inventoryMenu;
@@ -309,6 +327,7 @@ void Client::openMainMenu()
 			input="";
 			do
 			{
+				if(ip==OFFICIAL_IP&&!bOfficialServerIsOnline)break;
 				CLEAR_SCREEN
 				inventory->updateInventory(chain);
 				std::cout << "Main Server Status: " << (bOfficialServerIsOnline ? "Online" : "Offline") << std::endl;
@@ -324,7 +343,7 @@ void Client::openMainMenu()
 				std::cout << "2: Make a transaction\n";
 				std::cout << "3: Change the name of your item\n";
 				ReadAndWrite::getInputAsString(input);
-				if(input=="1")
+				if(input=="1") // attribute item from game
 				{
 					bPause=true;
 					std::cout << "Enter item ID (not necessarily a number, just how the game will identify the item): ";
@@ -333,14 +352,18 @@ void Client::openMainMenu()
 					std::cout << "Enter a personalized name for this item: ";
 					std::string itemName;
 					ReadAndWrite::getInputAsString(itemName);
-					std::string data = "\n\tITEM\n\t{\n\tID:"+itemID+"\n\tNAME:"+itemName+"\n\t}\n\tFROM GAME\n\tTO "+
-									  inventory->getPublicKey();
-					chain->addBlockToChain(data);
-					chain->write("ClientBlockchain.txt");
-					inventory->updateInventory(chain);
+					if(input.find('>')==std::string::npos)
+					{
+						// refer to the txt file if you want a clearer picture of what's going on here
+						std::string data = "\n\tITEM\n\t{\n\tID:"+itemID+"\n\tNAME:"+itemName+"\n\t}\n\tFROM GAME\n\tTO "+
+										   inventory->getPublicKey();
+						chain->addBlockToChain(data);
+						chain->write("ClientBlockchain.txt");
+						inventory->updateInventory(chain);
+					}
 					bPause=false;
 				}
-				else if(input=="2")
+				else if(input=="2") // make a transaction
 				{
 					bPause=true;
 					std::cout << "Select the item from your inventory using it's corresponding number listed above: ";
@@ -362,7 +385,7 @@ void Client::openMainMenu()
 					catch(...){}
 					bPause=false;
 				}
-				else if(input=="3")
+				else if(input=="3") // change the name of an existing item
 				{
 					bPause=true;
 					std::cout << "Select the item from your inventory using it's corresponding number listed above: ";
@@ -377,10 +400,19 @@ void Client::openMainMenu()
 							std::string currentItemName=inventory->at(indexOfChoice)->getItemName();
 							std::cout << "Enter a new name for "<<itemID<<": ";
 							ReadAndWrite::getInputAsString(input);
-							chain->addBlockToChain("\n\tITEM\n\t{\n\tID:"+itemID+"\n\tNAME:"+currentItemName+" --> "
-							+input+"\n\t}\n\tFROM "+inventory->getPublicKey()+"\n\tTO "+
-												   inventory->getPublicKey());
-							chain->write("ClientBlockchain.txt");
+							if(input.find('>')==std::string::npos)
+							{
+								chain->addBlockToChain("\n\tITEM\n\t{\n\tID:"+itemID+"\n\tNAME:"+currentItemName
+													   +" --> "+input+"\n\t}\n\tFROM "+inventory->getPublicKey()+"\n\tTO "+
+													   inventory->getPublicKey());
+								chain->write("ClientBlockchain.txt");
+							}
+							else
+							{
+								std::cout << "Mr. Polizano please stop trying to break this program."
+					 					<<" I worked so hard on it\n";
+								pressEnterToCont();
+							}
 							inventory->updateInventory(chain);
 						}
 					}
@@ -394,9 +426,12 @@ void Client::openMainMenu()
 		}
 	}
 	while(input!="e");
-	bShuttingDown=true;
-	tGrabChain->detach();
-	sendMessageToServer("Disconnecting...",OFFICIAL_IP,PORT);
+	if(!bPlayOffline)
+	{
+		bShuttingDown=true;
+		tGrabChain->detach();
+		sendMessageToServer("Disconnecting...",ip,PORT);
+	}
 	goto clientMainMenu;
 }
 

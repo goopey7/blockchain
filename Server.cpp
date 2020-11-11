@@ -98,7 +98,9 @@ void Server::listenAndObeyClient()
 		else if(bufferStr.find("BLOCKCHAIN_UPDATE_REQ:")!=std::string::npos)
 		{
 			if(bVerbose)std::cout << "BLOCKCHAIN_UPDATE_REQ from " << inet_ntoa(address.sin_addr) << std::endl;
-			std::string recvd="REQ_RECVD"+std::string(DELIM);
+			std::string recvd="REQ_RECVD";
+			recvd+=picosha2::hash256_hex_string(recvd);
+			recvd+=std::string(DELIM);
 			send(newSocket, recvd.c_str(), recvd.length(), 0);
 			bufferStr=bufferStr.substr(0,bufferStr.find_last_of('}')+1);
 			std::vector<std::string> clientChain;

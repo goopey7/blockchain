@@ -195,7 +195,7 @@ void Inventory::updateInventory(Blockchain* _chain)
 			}
 			else // we are changing the item's name
 			{
-				std::string oldName = itemParseHelper[3].substr(5,itemParseHelper[3].find("-->")-6);
+				std::string oldName = itemParseHelper[3].substr(5,itemParseHelper[3].find('>')-8);
 				std::string newName = itemParseHelper[3].substr(itemParseHelper[3].find('>')+2);
 				std::string itemID = itemParseHelper[2].substr(3);
 				for(int i=0;i<items->size();i++)
