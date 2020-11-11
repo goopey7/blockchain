@@ -204,6 +204,7 @@ void Client::openMainMenu()
 		std::cout << "1: Join main server\n";
 		std::cout << "2: Connect to custom server\n";
 		std::cout << "3: Play offline\n";
+		std::cout << "E: Exit\n";
 		std::cout << "Enter: Refresh\n";
 		ReadAndWrite::getInputAsString(input);
 		if(input=="1"&&bOfficialServerIsOnline)
@@ -257,6 +258,7 @@ void Client::openMainMenu()
 		std::cout << "2: Delete Block\n";
 		std::cout << "3: Access inventory\n";
 		std::cout << "4: Create new inventory\n";
+		std::cout << "E: Exit\n";
 		std::cout << "Enter: Refresh\n";
 		ReadAndWrite::getInputAsString(input);
 		if(input=="1")
@@ -349,6 +351,7 @@ void Client::openMainMenu()
 				std::cout << "1: Attribute an item from the game\n";
 				std::cout << "2: Make a transaction\n";
 				std::cout << "3: Change the name of your item\n";
+				std::cout << "E: Exit\n";
 				ReadAndWrite::getInputAsString(input);
 				if(input=="1") // attribute item from game
 				{
