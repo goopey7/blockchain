@@ -66,10 +66,16 @@ void Server::listenAndObeyClient()
 		if(valread<0)bufferStr="";
 		bufferStr=bufferStr.substr(0,
 							 bufferStr.find(DELIM));
+		std::string hashToCheck = bufferStr.substr(bufferStr.length()-64,bufferStr.length());
+		bufferStr=bufferStr.substr(0,bufferStr.length()-64);
+		if(hashToCheck!=picosha2::hash256_hex_string(bufferStr))
+			bufferStr="";
 		// send the difficulty
 		if (bufferStr=="SEND_DIFFICULTY")
 		{
-			std::string diffStr="DIFFICULTY:"+std::to_string(chain->getDifficulty())+DELIM;
+			std::string diffStr="DIFFICULTY:"+std::to_string(chain->getDifficulty());
+			diffStr+=picosha2::hash256_hex_string(diffStr);
+			diffStr+=DELIM;
 			send(newSocket, diffStr.c_str(), diffStr.length(), 0);
 			if(bVerbose)std::cout << "Difficulty sent to " << inet_ntoa(address.sin_addr) << std::endl;
 		}
@@ -78,7 +84,9 @@ void Server::listenAndObeyClient()
 			std::vector<std::string>* chainToSend=chain->write("ServerBlockchain.txt");
 			if(chainToSend== nullptr) // if we don't have a blockchain, ask the client to send their blockchain.
 			{
-				std::string empty=std::string("EMPTY_CHAIN"+std::string(DELIM));
+				std::string empty="EMPTY_CHAIN";
+				empty+=picosha2::hash256_hex_string(empty);
+				empty+=std::string(DELIM);
 				send(newSocket, empty.c_str(), empty.length(), 0);
 				break;
 			}
@@ -89,6 +97,7 @@ void Server::listenAndObeyClient()
 				chainStr+=chainToSend->at(i);
 				chainStr+='\n';
 			}
+			chainStr+=picosha2::hash256_hex_string(chainStr);
 			chainStr+=DELIM;
 			send(newSocket, chainStr.c_str(), chainStr.length(), 0);
 			if(bVerbose)std::cout << "Blockchain sent to " << inet_ntoa(address.sin_addr) << std::endl;
@@ -135,7 +144,9 @@ void Server::listenAndObeyClient()
 		}
 		else if(bufferStr=="Hello! Are you awake?")
 		{
-			std::string awake = "Yeah, I'm awake"+std::string(DELIM);
+			std::string awake = "Yeah, I'm awake";
+			awake+=picosha2::hash256_hex_string(awake);
+			awake+=std::string(DELIM);
 			send(newSocket, awake.c_str(), awake.length(), 0);
 			if(bVerbose)std::cout << "Received ping from " << inet_ntoa(address.sin_addr) << std::endl;
 		}
@@ -156,7 +167,9 @@ void Server::listenAndObeyClient()
 		}
 		else
 		{
-			std::string unknown = "ERROR:UnknownCommand"+std::string(DELIM);
+			std::string unknown = "ERROR:UnknownCommand";
+			unknown+=picosha2::hash256_hex_string(unknown);
+			unknown+=std::string(DELIM);
 			send(newSocket, unknown.c_str(), unknown.length(), 0);
 		}
 		close(serverFileDescriptor);

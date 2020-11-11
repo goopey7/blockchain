@@ -55,6 +55,7 @@ void Client::pingMainServer()
 
 std::string Client::sendMessageToServer(std::string message,std::string ip,int port,bool bExpectResponse)
 {
+	message+=picosha2::hash256_hex_string(message);
 	message+=DELIM;
 	// https://www.geeksforgeeks.org/socket-programming-cc/
 	int sock = 0, valread;
@@ -62,6 +63,7 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 	char buffer[1024] = {0};
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
+		bOfficialServerIsOnline=false;
 		printf("\n Socket creation error \n");
 		return "";
 	}
@@ -94,7 +96,12 @@ std::string Client::sendMessageToServer(std::string message,std::string ip,int p
 			else return "ERROR READING SOCKET";
 		}
 		close(sock);
-		return bufferStr.substr(0,bufferStr.find(DELIM));
+		bufferStr=bufferStr.substr(0,bufferStr.find(DELIM));
+		std::string hashToCheck = bufferStr.substr(bufferStr.length()-64,bufferStr.length());
+		bufferStr=bufferStr.substr(0,bufferStr.length()-64);
+		if(hashToCheck!=picosha2::hash256_hex_string(bufferStr))
+			return "";
+		return bufferStr;
 	}
 	return "";
 }
