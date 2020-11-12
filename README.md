@@ -1,25 +1,34 @@
 
 # blockchain
 ## Build on Ubuntu based distros
-Install the OpenSSL Library
+1. Install the OpenSSL Library
 
 `sudo apt-get install libssl-dev`
 
-Clone the project: 
+2. Clone the project
 
 `git clone https://github.com/goopey7/blockchain.git`
 
-Enter the repository's folder:
+3. Enter the repository's folder
 
 `cd blockchain-master`
 
-Compile with g++
+4. Compile with g++
 
 `g++ *.cpp -L/usr/lib -lssl -lcrypto  -o blockchain -pthread`
 
-Run:
+5. Run 
 
 `./blockchain`
+
+## Run on Windows
+If you just want to run the program on Windows you can [download the build here](https://github.com/goopey7/blockchain/releases)
+
+## Build on Windows
+ 1. You will need the OpenSSL library. Follow [this YouTube tutorial](https://www.youtube.com/watch?v=PMHEoBkxYaQ) on how to compile the OpenSSL library for Windows in Visual Studio 2019 or Visual Studio 2017
+ 2. Switch to the Windows-Compatible branch of the repository to download the source code for Windows and add it to the Visual Studio project you made in the YouTube tutorial.
+ ![enter image description here](https://samcollier.tech/blockchainDocumentation/branch.png)
+
 
 ## Joining a Server
 ![Client's main menu](https://samcollier.tech/blockchainDocumentation/ClientStartMenu.png)
