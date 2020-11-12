@@ -115,8 +115,10 @@ uint64_t LLNode<T>::size()
 {
 	try
 	{
-		if ((next == NULL && data == NULL)||IsBadReadPtr(this,sizeof(this)))return 0;
-		if (next == NULL)return 1;
+		if (this == nullptr)return 0;
+		bool b = (next == nullptr && data == nullptr);
+		if(b) return 0;
+		if (next == nullptr)return 1;
 		return next->size() + 1;
 	}
 	catch (...) { return 0; }
@@ -139,10 +141,11 @@ void LLNode<T>::clear()
 {
 	try
 	{
-		if (this == NULL)return;
-		if (size() == 0 && next == NULL && data == NULL)return;
-		if (next != NULL)next->clear();
-		if (next == NULL && data != NULL && this!=NULL)
+		if (this == nullptr)return;
+		if (size() == 0 && next == nullptr && data == nullptr)return;
+		if (next != nullptr)next->clear();
+		bool b = next == nullptr && data != nullptr && this != nullptr;
+		if (b)
 		{
 			delete this;
 		}

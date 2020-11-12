@@ -252,7 +252,7 @@ void Client::grabChain(std::string ip, int port)
 						lineToAdd+=serverChainStr.c_str()[i];
 					i++;
 				}
-				if(serverChain!=NULL)serverChain->clear();
+				serverChain = nullptr;
 				serverChain = new Blockchain;
 				serverChain->read(&readChain);
 				uint64_t serverSize=serverChain->size();
@@ -260,14 +260,18 @@ void Client::grabChain(std::string ip, int port)
 				if(chain!= nullptr)
 				{
 					serverChain->setDifficulty(chain->getDifficulty());
-					chainSize = chain->size();
+					try
+					{
+						chainSize = chain->size();
+					}
+					catch (...) { chainSize = 0; }
 				}
 				else chainSize=0;
 				if(serverSize>=chainSize&&serverChain->validateChain())
 				{
-					if(chain!=NULL)
+					if(chain!=nullptr)
 					{
-						delete chain;
+						chain->clear();
 					}
 					chain = serverChain;
 					chain->write("ClientBlockchain.txt");

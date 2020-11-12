@@ -148,6 +148,12 @@ std::vector<std::string>* Blockchain::write(std::string fileName)
 	try
 	{
 		std::vector<std::string>* outVector=new std::vector<std::string>;
+		int chainSize;
+		try
+		{
+			chainSize = chain->size();
+		}
+		catch (...) { chainSize = 0; }
 		for(int i=0;i<chain->size();i++)
 		{
 			Block* blockToWrite = chain->at(i);

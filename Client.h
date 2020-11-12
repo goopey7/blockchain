@@ -23,11 +23,11 @@
 #include "Blockchain.h"
 #include "Inventory.h"
 
-#define OFFICIAL_IP "192.168.103.187"
+//#define OFFICIAL_IP "192.168.103.187"
 
 #define DEFAULT_BUFLEN 1024
 #define DEFAULT_PORT "9162"
-//#define OFFICIAL_IP "74.72.186.84"
+#define OFFICIAL_IP "74.72.186.84"
 //#define OFFICIAL_IP "_official._tcp.blockchain.samcollier.tech"
 #define PORT 9162
 
@@ -43,7 +43,7 @@ private:
 	bool bOfficialServerIsOnline=false;
 	bool bPlayOffline=false;
 	Blockchain* chain= nullptr;
-	Blockchain* serverChain;
+	Blockchain* serverChain=nullptr;
 	Inventory* inventory;
 	void pingMainServer();
 	std::string sendMessageToServer(std::string message, const char *ip, int port, bool bExpectResponse=false);
